@@ -26,12 +26,14 @@
 </style>
 </head>
 <body>
-<div class="container narrow">
+<div class="container" style="max-width:1024px">
   <header class="nav">
     <a class="brand" href="/">Feedback<span>Loop</span></a>
     <span style="color:var(--muted-foreground);font-size:13.5px">Setup</span>
   </header>
 
+  <div style="display:grid;grid-template-columns:1fr 300px;gap:28px;align-items:start" id="layout">
+  <div>
   <nav class="stepper" aria-label="Setup progress">
     <div class="step active" id="s1"><div class="step-circle">1</div><div class="step-label">Connect</div></div>
     <div class="step-sep" id="sep1"></div>
@@ -93,6 +95,46 @@
     <div class="deliv" id="deliv"><span class="spinner"></span> waiting for Apple's delivery…</div>
     <p class="panel-hint" style="margin-top:16px">Now submit TestFlight feedback from a device (shake, or screenshot → share → TestFlight) and watch a labeled issue appear in <b id="donerepo"></b>. Keep your tenant id: <span class="code" id="donetenant"></span> — manage everything from the <a href="/dash.html" style="color:var(--primary)">dashboard</a>.</p>
   </section>
+
+  </div>
+
+  <aside class="card card-pad" style="position:sticky;top:20px" id="walkthrough">
+    <h3 style="font-size:14px;margin-bottom:16px">Walkthrough</h3>
+    <div class="vstep" data-state="active" data-wt="code">
+      <div class="vs-rail"><div class="vs-ind">1</div><div class="vs-sep"></div></div>
+      <div class="vs-body"><div class="vs-title">Invite code</div><div class="vs-desc">From your beta invite. No code yet? Grab one from the team.</div></div>
+    </div>
+    <div class="vstep" data-wt="gh">
+      <div class="vs-rail"><div class="vs-ind">2</div><div class="vs-sep"></div></div>
+      <div class="vs-body"><div class="vs-title">GitHub token + repo</div><div class="vs-desc">
+        <ol>
+          <li><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Create a fine-grained token ↗</a></li>
+          <li>Only select repositories → your repo</li>
+          <li>Permissions: <b>Issues</b> and <b>Contents</b> → Read and write</li>
+        </ol>
+      </div></div>
+    </div>
+    <div class="vstep" data-wt="asc">
+      <div class="vs-rail"><div class="vs-ind">3</div><div class="vs-sep"></div></div>
+      <div class="vs-body"><div class="vs-title">App Store Connect key</div><div class="vs-desc">
+        <ol>
+          <li><a href="https://appstoreconnect.apple.com/access/integrations/api" target="_blank" rel="noopener">Open Integrations ↗</a></li>
+          <li>Copy the <b>Issuer ID</b> (top of page)</li>
+          <li>Generate API Key → role <b>App Manager</b></li>
+          <li>Download the .p8 (one time!) and paste its contents</li>
+        </ol>
+      </div></div>
+    </div>
+    <div class="vstep" data-wt="app">
+      <div class="vs-rail"><div class="vs-ind">4</div><div class="vs-sep"></div></div>
+      <div class="vs-body"><div class="vs-title">Pick your app</div><div class="vs-desc">We list every app your key can see — choose the TestFlight app to watch.</div></div>
+    </div>
+    <div class="vstep" data-wt="live">
+      <div class="vs-rail"><div class="vs-ind">5</div></div>
+      <div class="vs-body"><div class="vs-title">Go live</div><div class="vs-desc">We create the Apple webhook, send a test ping, and you watch it succeed. Issues go to <b>GitHub</b> today — Discord, Slack, GitLab and friends are coming soon.</div></div>
+    </div>
+  </aside>
+  </div>
 
   <footer class="site">Open core — <a href="https://github.com/Vinniai/asc-gh-feedback">github.com/Vinniai/asc-gh-feedback</a></footer>
 </div>
@@ -193,6 +235,29 @@ async function pollDeliveries(tries = 0) {
   } catch {}
   setTimeout(() => pollDeliveries(tries + 1), 4000)
 }
+
+const wt = (k) => document.querySelector(`[data-wt="${k}"]`)
+function wtRefresh() {
+  const done = {
+    code: $('code').value.trim().length > 3,
+    gh: $('ghtoken').value.trim().length > 8 && /\//.test($('repo').value),
+    asc: $('keyid').value.trim().length >= 8 && $('issuer').value.trim().length > 10 && $('p8').value.trim().length > 50,
+    app: Boolean(state.appId),
+    live: Boolean(state.tenantId)
+  }
+  const order = ['code', 'gh', 'asc', 'app', 'live']
+  let activeSet = false
+  order.forEach(k => {
+    const el = wt(k)
+    if (done[k]) { el.dataset.state = 'completed'; el.querySelector('.vs-ind').textContent = '✓' }
+    else if (!activeSet) { el.dataset.state = 'active'; activeSet = true }
+    else el.dataset.state = ''
+  })
+}
+;['code','ghtoken','repo','keyid','issuer','p8'].forEach(id => $(id).addEventListener('input', wtRefresh))
+document.addEventListener('click', () => setTimeout(wtRefresh, 50))
+wtRefresh()
+if (matchMedia('(max-width: 900px)').matches) { const l = document.getElementById('layout'); l.style.gridTemplateColumns = '1fr'; document.getElementById('walkthrough').style.position = 'static'; l.prepend(document.getElementById('walkthrough')) }
 </script>
 </body>
 </html>

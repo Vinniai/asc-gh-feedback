@@ -7,3 +7,4 @@ node_modules/
 .tenant-key.local
 .agents/
 skills-lock.json
+.session-secret.local

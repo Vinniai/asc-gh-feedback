@@ -33,12 +33,19 @@
   .dest-row button { flex: 0 0 auto; background: none; border: 1px solid var(--border); color: var(--destructive); border-radius: 8px; width: 34px; cursor: pointer; }
   .mini { font-size: 12.5px; padding: 8px 10px !important; }
   .row2 { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 13.5px; }
-  .row2 input[type=checkbox] { width: auto; }
   .save-row { display: flex; gap: 10px; align-items: center; margin-top: 16px; }
   .save-msg { font-size: 12.5px; }
   .deliv-out { font: 11.5px var(--font-mono); color: var(--muted-foreground); margin-top: 10px; white-space: pre-wrap; }
   .empty { text-align: center; padding: 60px 0; color: var(--muted-foreground); }
   .claim { display: flex; gap: 8px; margin-top: 30px; max-width: 420px; margin-left: auto; margin-right: auto; }
+  .cat-row { display: flex; align-items: center; gap: 11px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+  .cat-row:last-child { border-bottom: 0; }
+  .cat-row.soon { opacity: .75; }
+  .cat-i { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font: 700 10.5px var(--font-mono); color: #fff; font-style: normal; flex: 0 0 auto; }
+  .cat-t { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .cat-t b { font-size: 13.5px; }
+  .cat-t span { font-size: 11.5px; color: var(--muted-foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row2 .switch { margin-right: 4px; }
 </style>
 </head>
 <body>
@@ -80,16 +87,6 @@ const api = async (method, url, body) => {
 }
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
 
-function destRow(d = { type: 'discord', url: '' }) {
-  return `<div class="dest-row">
-    <select class="mini d-type" style="background:var(--card);color:var(--foreground);border:1px solid var(--border);border-radius:8px">
-      ${['discord','slack','webhook'].map(t => `<option ${t===d.type?'selected':''}>${t}</option>`).join('')}
-    </select>
-    <input class="mini d-url" style="background:var(--card);color:var(--foreground);border:1px solid var(--border);border-radius:8px;font-family:var(--font-mono)" placeholder="https://…" value="${esc(d.url)}">
-    <button title="Remove" onclick="this.parentElement.remove()">×</button>
-  </div>`
-}
-
 function card(t) {
   const el = document.createElement('section')
   el.className = 'card app-card'
@@ -113,13 +110,26 @@ function card(t) {
     <div class="cfg">
       <div>
         <h4>Destinations</h4>
-        <div data-role="dests">${(t.destinations || []).map(destRow).join('')}</div>
-        <button class="btn btn-outline mini" data-role="adddest">+ Add destination</button>
+        <div class="cat">
+          <div class="cat-row">
+            <i class="cat-i" style="background:#24292f">GH</i>
+            <div class="cat-t"><b>GitHub Issues</b><span>${esc(t.repo)}</span></div>
+            <span class="badge badge-success-light">live</span>
+            <input type="checkbox" class="switch" checked disabled title="GitHub is the primary destination">
+          </div>
+          ${[['GL','#fc6d26','GitLab'],['SL','#611f69','Slack'],['DC','#5865F2','Discord'],['LN','#5E6AD2','Linear'],['JR','#2684FF','Jira'],['NT','#37352f','Notion'],['TG','#229ED9','Telegram'],['WH','#16a34a','Any webhook']].map(([m,c,n]) => `
+          <div class="cat-row soon">
+            <i class="cat-i" style="background:${c}">${m}</i>
+            <div class="cat-t"><b>${n}</b><span>same issue, delivered there</span></div>
+            <span class="badge badge-secondary">coming soon</span>
+            <input type="checkbox" class="switch" disabled>
+          </div>`).join('')}
+        </div>
       </div>
       <div>
         <h4>Pipeline</h4>
-        <label class="row2"><input type="checkbox" data-role="p-issue" ${t.pipeline.createIssue !== false ? 'checked' : ''}> Create GitHub issue</label>
-        <label class="row2"><input type="checkbox" data-role="p-routine" ${t.pipeline.fireRoutine !== false ? 'checked' : ''}> Fire Claude triage routine ${t.routineConfigured ? '' : '<span style="color:var(--muted-foreground)">(no routine configured)</span>'}</label>
+        <label class="row2"><input type="checkbox" class="switch" data-role="p-issue" ${t.pipeline.createIssue !== false ? 'checked' : ''}> Create GitHub issue</label>
+        <label class="row2"><input type="checkbox" class="switch" data-role="p-routine" ${t.pipeline.fireRoutine !== false ? 'checked' : ''}> Fire Claude triage routine ${t.routineConfigured ? '' : '<span style="color:var(--muted-foreground)">(no routine configured)</span>'}</label>
         <div class="field" style="margin-top:8px"><label>Labels</label><input class="mini" data-role="labels" value="${esc(t.labels)}"></div>
         <div class="field"><label>Routine ID <span class="desc">optional</span></label><input class="mini" data-role="rid" placeholder="trig_…"></div>
         <div class="field"><label>Routine token <span class="desc">write-only</span></label><input class="mini" type="password" data-role="rtok" placeholder="${t.routineConfigured ? '••••••• (set)' : 'sk-ant-oat01-…'}"></div>
@@ -132,14 +142,9 @@ function card(t) {
     <div class="deliv-out" data-role="delivout"></div>`
 
   const q = (r) => el.querySelector(`[data-role="${r}"]`)
-  q('adddest').onclick = () => q('dests').insertAdjacentHTML('beforeend', destRow())
   q('save').onclick = async () => {
-    const destinations = [...q('dests').querySelectorAll('.dest-row')].map(r => ({
-      type: r.querySelector('.d-type').value, url: r.querySelector('.d-url').value.trim()
-    })).filter(d => d.url)
     const patch = {
       labels: q('labels').value.trim(),
-      destinations,
       pipeline: { createIssue: q('p-issue').checked, fireRoutine: q('p-routine').checked }
     }
     if (q('rid').value.trim()) patch.routineId = q('rid').value.trim()
