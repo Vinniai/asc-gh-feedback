@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dashboard — FeedbackLoop</title>
+<title>Dashboard — AppShake</title>
 <link rel="stylesheet" href="styles.css">
 <style>
   .top { display: flex; align-items: center; gap: 10px; }
@@ -30,7 +30,8 @@
   .acc-state { font-size: 12.5px; color: var(--muted-foreground); }
   .chev { color: var(--muted-foreground); transition: transform .25s var(--ease-out-quart); flex: 0 0 auto; }
   .acc[data-open] .chev { transform: rotate(180deg); }
-  .acc-body { border-top: 1px solid var(--border); padding: 16px 18px 18px; }
+  .acc-body { border-top: 1px solid transparent; padding: 0 18px; }
+  .acc[data-open] .acc-body { border-top-color: var(--border); padding: 16px 18px 18px; transition: padding 250ms var(--ease-out); }
   .sec { border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; }
   .sec > summary { list-style: none; display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer; font-size: 13.5px; font-weight: 600; }
   .sec > summary::-webkit-details-marker { display: none }
@@ -93,12 +94,51 @@
   .wiz-app .b { font: 11.5px var(--font-mono); color: var(--muted-foreground); }
   @media (max-width: 640px) { dialog#wiz { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; border: 0; margin: 0; } .wiz-body { max-height: none; flex: 1; } }
   [hidden] { display: none !important; }
+  /* read-only destination rows */
+  .drow.ro { cursor: default; }
+  .drow .d-name { font-size: 13.5px; font-weight: 600; flex: 0 0 auto; }
+  .drow .d-mask { flex: 1; min-width: 0; font: 12px var(--font-mono); color: var(--muted-foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+  .drow .ed { background: none; border: 0; color: var(--muted-foreground); cursor: pointer; font-size: 13px; padding: 4px; }
+  .drow .ed:hover { color: var(--foreground); }
+
+  /* label pills */
+  .pillbox { display: flex; flex-wrap: wrap; gap: 6px; padding: 7px 9px; border: 1px solid var(--input); border-radius: var(--radius); background: var(--background); cursor: text; min-height: 40px; align-items: center; }
+  .pillbox:focus-within { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 20%, transparent); }
+  .pill-tag { display: inline-flex; align-items: center; gap: 5px; font: 600 12px var(--font-mono); padding: 3px 6px 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary); animation: pill-in .15s var(--ease-out) both; }
+  @keyframes pill-in { from { opacity: 0; transform: scale(.95) } }
+  .pill-tag button { background: none; border: 0; color: inherit; cursor: pointer; font-size: 13px; padding: 0 2px; opacity: .7; }
+  .pill-tag button:hover { opacity: 1; }
+  .pill-in { flex: 1; min-width: 120px; background: none; border: 0; color: var(--foreground); font: 13px var(--font-mono); outline: none; padding: 4px 2px; }
+
+  /* Motion (Emil pass): interruptible transitions, strong ease-out, ≤300ms */
+  .acc-wrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 250ms var(--ease-out); }
+  .acc[data-open] .acc-wrap { grid-template-rows: 1fr; }
+  .acc-wrap > .acc-body { overflow: hidden; min-height: 0; }
+  .chev { transition: transform 200ms var(--ease-out); }
+  .sec .sec-wrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 220ms var(--ease-out); }
+  .sec[open] .sec-wrap { grid-template-rows: 1fr; }
+  .sec .sec-wrap > .sec-body { overflow: hidden; min-height: 0; }
+  .addmenu-list { transform-origin: top left; transition: opacity 150ms var(--ease-out), transform 150ms var(--ease-out); }
+  .addmenu-list[hidden] { display: block !important; opacity: 0; transform: scale(.96) translateY(-4px); pointer-events: none; }
+  .savebar { transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out); }
+  .savebar[hidden] { display: flex !important; opacity: 0; transform: translateY(6px); pointer-events: none; }
+  .pause { transition: transform 160ms var(--ease-out), background 150ms var(--ease-out); }
+  .pause:active { transform: scale(.97); }
+  dialog#wiz { opacity: 1; transform: none; transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-out); }
+  @starting-style { dialog#wiz[open] { opacity: 0; transform: scale(.97) translateY(8px); } }
+  dialog#wiz::backdrop { transition: background 220ms var(--ease-out); }
+  @starting-style { dialog#wiz[open]::backdrop { background: rgb(0 0 0 / 0); } }
+  @media (prefers-reduced-motion: reduce) {
+    .acc-wrap, .sec .sec-wrap, .chev, .addmenu-list, .savebar, dialog#wiz { transition: opacity 150ms ease !important; }
+    .pill-tag { animation: none; }
+    .pause:active, .btn:active { transform: none; }
+  }
 </style>
 </head>
 <body>
 <div class="container">
   <header class="nav">
-    <a class="brand" href="/">Feedback<span>Loop</span></a>
+    <a class="brand" href="/">App<span>Shake</span></a>
     <div class="top" id="top"><span class="who">Dashboard</span></div>
   </header>
 
@@ -160,13 +200,23 @@ function card(t) {
 
   const summaryLine = () => `<span class="gh-mini">GH</span> ${esc(t.repo)}${dests.length ? ` · +${dests.length} destination${dests.length > 1 ? 's' : ''}` : ''}`
 
+  const maskUrl = (u) => { try { const x = new URL(u); return x.host + '/…' + u.replace(/\/+$/, '').slice(-5) } catch { return u.slice(0, 22) + '…' } }
   const destRows = () => dests.map((d, i) => {
     const [mono, color, name, hint] = DTYPES[d.type]
-    return `<div class="drow" data-i="${i}">
-      <i class="cat-i" style="background:${color}">${mono}</i>
-      <input class="d-url" placeholder="https://…" value="${esc(d.url)}" title="${esc(hint)}">
-      <button class="rm" title="Remove ${name}">×</button>
-    </div>`
+    return d.editing || !d.url
+      ? `<div class="drow" data-i="${i}">
+          <i class="cat-i" style="background:${color}">${mono}</i>
+          <input class="d-url" placeholder="https://…" value="${esc(d.url)}" title="${esc(hint)}">
+          <button class="rm" title="Remove ${name}">×</button>
+        </div>`
+      : `<div class="drow ro" data-i="${i}">
+          <i class="cat-i" style="background:${color}">${mono}</i>
+          <span class="d-name">${name}</span>
+          <span class="d-mask" title="Click to edit">${esc(maskUrl(d.url))}</span>
+          <span class="badge badge-success-light">on</span>
+          <button class="ed" title="Edit URL">✎</button>
+          <button class="rm" title="Remove ${name}">×</button>
+        </div>`
   }).join('') || '<p style="font-size:12.5px;color:var(--muted-foreground);padding:6px 0">Only GitHub for now — add somewhere else below.</p>'
 
   el.innerHTML = `
@@ -177,7 +227,7 @@ function card(t) {
       <span class="acc-state" data-role="state">${t.enabled ? 'Live' : 'Paused'}</span>
       <svg class="chev" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
-    <div class="acc-body" hidden>
+    <div class="acc-wrap"><div class="acc-body">
       <div class="quick">
         <a href="${t.links.issues}" target="_blank" rel="noopener">GitHub issues ↗</a>
         <a href="${t.links.ascFeedback}" target="_blank" rel="noopener">ASC feedback ↗</a>
@@ -187,7 +237,7 @@ function card(t) {
 
       <details class="sec" open>
         <summary><i class="cat-i" style="background:#24292f;width:22px;height:22px;font-size:9px">GH</i> Destinations <span class="badge badge-success-light">GitHub live</span></summary>
-        <div class="sec-body">
+        <div class="sec-wrap"><div class="sec-body">
           <div data-role="drows">${destRows()}</div>
           <div class="addmenu">
             <button class="btn btn-outline mini" data-role="addbtn">+ Add destination</button>
@@ -198,15 +248,18 @@ function card(t) {
                 `<button class="addmenu-item" disabled><i class="cat-i" style="background:${color};width:22px;height:22px;font-size:9px">${mono}</i>${name}<span class="badge badge-secondary">soon</span></button>`).join('')}
             </div>
           </div>
-        </div>
+        </div></div>
       </details>
 
       <details class="sec">
         <summary>Pipeline & triage ${t.routineConfigured ? '<span class="badge badge-success-light">routine on</span>' : ''}</summary>
-        <div class="sec-body">
+        <div class="sec-wrap"><div class="sec-body">
           <label class="row2"><input type="checkbox" class="switch" data-role="p-issue" ${t.pipeline.createIssue !== false ? 'checked' : ''}> Create GitHub issue</label>
           <label class="row2"><input type="checkbox" class="switch" data-role="p-routine" ${t.pipeline.fireRoutine !== false ? 'checked' : ''}> Fire Claude triage routine</label>
-          <div class="field" style="margin-top:8px"><label>Labels</label><input class="mini" data-role="labels" value="${esc(t.labels)}"></div>
+          <div class="field" style="margin-top:8px"><label>Labels</label>
+            <div class="pillbox" data-role="labelbox"><input class="pill-in" data-role="labelin" placeholder="add label, press comma"></div>
+          </div>
+          <div class="routine-cfg" data-role="routinecfg" ${t.pipeline.fireRoutine !== false ? '' : 'hidden'}>
           <div class="grid-2">
             <div class="field"><label>Routine ID</label><input class="mini" data-role="rid" placeholder="trig_…"></div>
             <div class="field"><label>Routine token <span class="desc">write-only</span></label><input class="mini" type="password" data-role="rtok" placeholder="${t.routineConfigured ? '•••••• (set)' : 'sk-ant-oat01-…'}"></div>
@@ -221,18 +274,19 @@ function card(t) {
             </ol>
             <textarea class="prompt-t" data-role="prompttext" readonly rows="4">You are the TestFlight feedback triage agent for this repo. A webhook files each TestFlight feedback/crash as a GitHub issue labeled testflight-feedback + needs-triage, with screenshots, device metadata, and crash logs embedded. The fire payload may include a specific issue URL — start there; otherwise list open issues with those labels. CLAIM-FIRST: re-read labels before analyzing; if needs-triage is gone, skip silently; claim by swapping needs-triage → triaged. Then: read the feedback and screenshots; find root cause in the code (crashes: read the stack); comment analysis with file/line refs, severity, fix suggestion; label type + priority P0-P3; open a fix PR for small confident fixes; dedupe and link duplicates. Never close a feedback issue without a fix PR or duplicate link.</textarea>
           </details>
-        </div>
+          </div>
+        </div></div>
       </details>
 
       <details class="sec">
         <summary>History</summary>
-        <div class="sec-body">
+        <div class="sec-wrap"><div class="sec-body">
           <div style="display:flex;gap:8px">
             <button class="btn btn-outline mini" data-role="activity">Activity</button>
             <button class="btn btn-outline mini" data-role="deliv">Apple deliveries</button>
           </div>
           <div class="deliv-out" data-role="delivout"></div>
-        </div>
+        </div></div>
       </details>
 
       <div class="savebar" data-role="savebar" hidden>
@@ -245,15 +299,13 @@ function card(t) {
         <button class="pause" data-role="toggle">${t.enabled ? 'Pause' : 'Resume'}</button>
         <button class="pause" data-role="delete" style="color:var(--destructive)">Disconnect</button>
       </div>
-    </div>`
+    </div></div>`
 
   const q = (r) => el.querySelector(`[data-role="${r}"]`)
   const head = el.querySelector('.acc-head')
-  const body = el.querySelector('.acc-body')
   head.onclick = () => {
-    const open = body.hidden
-    document.querySelectorAll('.acc').forEach(a => { if (a !== el) { a.querySelector('.acc-body').hidden = true; a.removeAttribute('data-open'); a.querySelector('.acc-head').setAttribute('aria-expanded', 'false') } })
-    body.hidden = !open
+    const open = !el.hasAttribute('data-open')
+    document.querySelectorAll('.acc').forEach(a => { if (a !== el) { a.removeAttribute('data-open'); a.querySelector('.acc-head').setAttribute('aria-expanded', 'false') } })
     el.toggleAttribute('data-open', open)
     head.setAttribute('aria-expanded', String(open))
   }
@@ -266,8 +318,12 @@ function card(t) {
   }
   const wireDests = () => {
     q('drows').querySelectorAll('.drow').forEach(row => {
-      row.querySelector('.d-url').oninput = (e) => { dests[+row.dataset.i].url = e.target.value.trim(); markDirty() }
-      row.querySelector('.rm').onclick = () => { dests.splice(+row.dataset.i, 1); rerenderDests(); markDirty() }
+      const i = +row.dataset.i
+      row.querySelector('.d-url')?.addEventListener('input', (e) => { dests[i].url = e.target.value.trim(); dests[i].editing = true; markDirty() })
+      row.querySelector('.rm').onclick = () => { dests.splice(i, 1); rerenderDests(); markDirty() }
+      const startEdit = () => { dests[i].editing = true; rerenderDests(); q('drows').querySelector(`.drow[data-i="${i}"] .d-url`)?.focus() }
+      row.querySelector('.ed')?.addEventListener('click', startEdit)
+      row.querySelector('.d-mask')?.addEventListener('click', startEdit)
     })
   }
   wireDests()
@@ -276,20 +332,44 @@ function card(t) {
   document.addEventListener('click', () => { const l = q('addlist'); if (l) l.hidden = true })
   q('addlist').querySelectorAll('[data-add]').forEach(b => b.onclick = (e) => {
     e.stopPropagation()
-    dests.push({ type: b.dataset.add, url: '' })
+    dests.push({ type: b.dataset.add, url: '', editing: true })
     q('addlist').hidden = true
     rerenderDests(); markDirty()
     const inputs = q('drows').querySelectorAll('.d-url'); inputs[inputs.length - 1]?.focus()
   })
 
-  ;['p-issue', 'p-routine', 'labels', 'rid', 'rtok'].forEach(r => { q(r).addEventListener('input', markDirty); q(r).addEventListener('change', markDirty) })
+  let labels = (t.labels || '').split(',').map(x => x.trim()).filter(Boolean)
+  const renderPills = () => {
+    q('labelbox').querySelectorAll('.pill-tag').forEach(x => x.remove())
+    labels.forEach((l, i) => {
+      const sp = document.createElement('span')
+      sp.className = 'pill-tag'
+      sp.innerHTML = `${esc(l)}<button aria-label="Remove ${esc(l)}">×</button>`
+      sp.querySelector('button').onclick = () => { labels.splice(i, 1); renderPills(); markDirty() }
+      q('labelbox').insertBefore(sp, q('labelin'))
+    })
+  }
+  renderPills()
+  q('labelin').addEventListener('keydown', (e) => {
+    if (e.key === ',' || e.key === 'Enter') {
+      e.preventDefault()
+      const v = q('labelin').value.replace(/,/g, '').trim()
+      if (v && !labels.includes(v)) { labels.push(v); renderPills(); markDirty() }
+      q('labelin').value = ''
+    } else if (e.key === 'Backspace' && !q('labelin').value && labels.length) { labels.pop(); renderPills(); markDirty() }
+  })
+  q('labelbox').onclick = () => q('labelin').focus()
 
-  q('discard').onclick = () => { dests = [...(t.destinations || [])]; rerenderDests(); q('labels').value = t.labels; q('rid').value = ''; q('rtok').value = ''; q('p-issue').checked = t.pipeline.createIssue !== false; q('p-routine').checked = t.pipeline.fireRoutine !== false; q('savebar').hidden = true }
+  ;['p-issue', 'p-routine', 'rid', 'rtok'].forEach(r => { q(r).addEventListener('input', markDirty); q(r).addEventListener('change', markDirty) })
+
+  q('p-routine').addEventListener('change', () => { q('routinecfg').hidden = !q('p-routine').checked })
+
+  q('discard').onclick = () => { dests = (t.destinations || []).map(d => ({ ...d })); rerenderDests(); labels = (t.labels || '').split(',').map(x => x.trim()).filter(Boolean); renderPills(); q('rid').value = ''; q('rtok').value = ''; q('p-issue').checked = t.pipeline.createIssue !== false; q('p-routine').checked = t.pipeline.fireRoutine !== false; q('savebar').hidden = true }
 
   q('save').onclick = async () => {
     const patch = {
-      labels: q('labels').value.trim(),
-      destinations: dests.filter(d => d.url),
+      labels: labels.join(','),
+      destinations: dests.filter(d => d.url).map(({ type, url }) => ({ type, url })),
       pipeline: { createIssue: q('p-issue').checked, fireRoutine: q('p-routine').checked }
     }
     if (q('rid').value.trim()) patch.routineId = q('rid').value.trim()
@@ -298,7 +378,7 @@ function card(t) {
     try {
       const r = await api('POST', '/api/tenants', { tenantId: t.tenantId, patch })
       t.destinations = r.tenant.destinations; t.labels = r.tenant.labels; t.pipeline = r.tenant.pipeline
-      dests = [...t.destinations]
+      dests = t.destinations.map(d => ({ ...d, editing: false }))
       rerenderDests()
       q('savebar').hidden = true
     } catch (e) { alert(e.message) }
@@ -366,7 +446,7 @@ function wizRender() {
   const b = W('wizbody'), next = W('wiznext')
   W('wizmsg').textContent = ''
   next.disabled = false
-  if (wiz.step === 0) {
+  if (wiz.step === 1) {
     const pf = wiz.prefill
     b.innerHTML = `<h3>Where should issues go?</h3>
       <p class="hint">Feedback becomes labeled GitHub issues in this repository.</p>
@@ -378,9 +458,9 @@ function wizRender() {
            <p class="hint" style="margin-top:12px">Your sign-in predates repository access — one click re-connects it. Or paste a fine-grained PAT below.</p>
            <div class="field"><label>Personal access token <span class="desc">(alternative)</span></label><input id="wtoken" type="password" placeholder="github_pat_…"></div>
            <div class="field"><label>Repository</label><input id="wrepo" placeholder="owner/repo" value="${esc(wiz.data.repo || '')}"></div>`}`
-    next.textContent = 'Continue'
+    next.textContent = 'List my apps'
   }
-  if (wiz.step === 1) {
+  if (wiz.step === 0) {
     const pf = wiz.prefill
     if (pf?.hasCreds) {
       b.innerHTML = `<h3>App Store Connect</h3>
@@ -394,7 +474,7 @@ function wizRender() {
         <div class="field"><label>Issuer ID</label><input id="wissuer" value="${esc(wiz.data.ascIssuerId || '')}"></div></div>
         <div class="field"><label>Private key (.p8 contents)</label><textarea id="wp8" rows="4">${esc(wiz.data.ascPrivateKey || '')}</textarea></div>`
     }
-    next.textContent = 'List my apps'
+    next.textContent = 'Continue'
   }
   if (wiz.step === 2) {
     b.innerHTML = `<h3>Pick the app to watch</h3>
@@ -437,17 +517,17 @@ async function wizNext() {
   msg.style.color = 'var(--destructive)'
   try {
     if (wiz.step === 0) {
-      wiz.data.repo = W('wrepo')?.value.trim()
-      wiz.data.githubToken = W('wtoken')?.value.trim() || ''
-      if (!wiz.data.repo || !/\//.test(wiz.data.repo)) { msg.textContent = 'Pick a repository (owner/repo)'; return }
-      wiz.step = 1
-    } else if (wiz.step === 1) {
       if (!wiz.data.useExisting) {
         wiz.data.ascKeyId = W('wkeyid').value.trim()
         wiz.data.ascIssuerId = W('wissuer').value.trim()
         wiz.data.ascPrivateKey = W('wp8').value.trim()
         if (!wiz.data.ascKeyId || !wiz.data.ascIssuerId || !wiz.data.ascPrivateKey) { msg.textContent = 'All three ASC fields are required'; return }
       }
+      wiz.step = 1
+    } else if (wiz.step === 1) {
+      wiz.data.repo = W('wrepo')?.value.trim()
+      wiz.data.githubToken = W('wtoken')?.value.trim() || ''
+      if (!wiz.data.repo || !/\//.test(wiz.data.repo)) { msg.textContent = 'Pick a repository (owner/repo)'; return }
       next.disabled = true; next.textContent = 'Checking…'
       const r = await api('POST', '/api/setup', { action: 'validate', ...wiz.data })
       wiz.data.apps = r.apps

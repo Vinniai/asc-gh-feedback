@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="TestFlight feedback becomes triaged GitHub issues — screenshots, crash logs, AI root-cause analysis, and fix PRs.">
-<title>FeedbackLoop — TestFlight feedback to triaged GitHub issues</title>
+<title>AppShake — TestFlight feedback to triaged GitHub issues</title>
 <link rel="stylesheet" href="styles.css">
 <style>
   body { overflow-x: hidden; }
@@ -236,7 +236,7 @@
 <div class="grid-bg" aria-hidden="true"></div>
 <div class="container">
   <header class="nav">
-    <a class="brand" href="/">Feedback<span>Loop</span></a>
+    <a class="brand" href="/">App<span>Shake</span></a>
     <nav class="nav-links" aria-label="Main">
       <a href="#how">How it works</a>
       <a href="#pricing">Pricing</a>
@@ -344,7 +344,7 @@
   <p class="section-sub">A real trace from a production app — timestamps included.</p>
   <div class="timeline reveal-stagger">
     <div class="tl"><div class="when">T+0s</div><h3>Tester shakes their phone</h3><p>"The technician capacity doesn't mean or have any interactions, what is it?" — screenshot attached, submitted through TestFlight's native sheet.</p></div>
-    <div class="tl"><div class="when">T+3s</div><h3>Apple delivers the signed webhook</h3><p>FeedbackLoop verifies the HMAC signature, fetches the full submission — screenshots, device, OS, build, locale, battery, uptime.</p></div>
+    <div class="tl"><div class="when">T+3s</div><h3>Apple delivers the signed webhook</h3><p>AppShake verifies the HMAC signature, fetches the full submission — screenshots, device, OS, build, locale, battery, uptime.</p></div>
     <div class="tl"><div class="when">T+14s</div><h3>GitHub issue opens, fully loaded</h3><p>Labeled <code>testflight-feedback</code> + <code>needs-triage</code>, screenshot embedded, device forensics in a tidy table.</p></div>
     <div class="tl"><div class="when">T+2m</div><h3>AI triage lands the verdict</h3><p>Root cause traced to <code>schedule.ts:165</code> — the widget counts tasks, not technicians. Labeled <code>bug · P2</code>, and a fix PR is opened referencing the issue.</p></div>
   </div>
