@@ -13,54 +13,66 @@
   .signin { text-align: center; padding: 100px 0; }
   .signin h1 { font-size: 30px; letter-spacing: -.02em; margin-bottom: 10px; }
   .signin p { color: var(--muted-foreground); margin-bottom: 26px; }
-  .apps-grid { display: grid; gap: 16px; margin-top: 24px; }
-  .app-card { padding: 22px 24px; }
-  .app-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  .app-head h3 { font-size: 17px; letter-spacing: -.01em; }
-  .app-head .b { font: 12px var(--font-mono); color: var(--muted-foreground); }
-  .pause { font-size: 12.5px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border); background: transparent; color: var(--foreground); cursor: pointer; }
-  .badge-on { background: color-mix(in srgb, var(--success) 14%, transparent); color: var(--success); }
-  .badge-off { background: color-mix(in srgb, var(--destructive) 14%, transparent); color: var(--destructive); }
-  .quick { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-  .quick a { font-size: 12.5px; color: var(--primary); text-decoration: none; border: 1px solid var(--border); padding: 5px 12px; border-radius: 999px; }
-  .quick a:hover { background: var(--muted); }
-  .cfg { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border); }
-  @media (max-width: 720px) { .cfg { grid-template-columns: 1fr } }
-  .cfg h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted-foreground); margin-bottom: 10px; }
-  .dest-row { display: flex; gap: 8px; margin-bottom: 8px; }
-  .dest-row select { flex: 0 0 110px; }
-  .dest-row input { flex: 1; }
-  .dest-row button { flex: 0 0 auto; background: none; border: 1px solid var(--border); color: var(--destructive); border-radius: 8px; width: 34px; cursor: pointer; }
-  .mini { font-size: 12.5px; padding: 8px 10px !important; }
-  .row2 { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 13.5px; }
-  .save-row { display: flex; gap: 10px; align-items: center; margin-top: 16px; }
-  .save-msg { font-size: 12.5px; }
-  .deliv-out { font: 11.5px var(--font-mono); color: var(--muted-foreground); margin-top: 10px; white-space: pre-wrap; }
   .empty { text-align: center; padding: 60px 0; color: var(--muted-foreground); }
   .claim { display: flex; gap: 8px; margin-top: 30px; max-width: 420px; margin-left: auto; margin-right: auto; }
-  .cat-row { display: flex; align-items: center; gap: 11px; padding: 9px 0; border-bottom: 1px solid var(--border); }
-  .cat-row:last-child { border-bottom: 0; }
-  .cat-row.soon { opacity: .75; }
   .cat-i { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font: 700 10.5px var(--font-mono); color: #fff; font-style: normal; flex: 0 0 auto; }
-  .cat-t { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  .cat-t b { font-size: 13.5px; }
-  .cat-t span { font-size: 11.5px; color: var(--muted-foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .row2 .switch { margin-right: 4px; }
-  .cat-sub { padding: 8px 0 12px 39px; }
-  .cat-hint { font-size: 11px; color: var(--muted-foreground); margin-top: 6px; }
-  .guide { margin-top: 14px; font-size: 13px; color: var(--muted-foreground); }
-  .guide summary { cursor: pointer; font-weight: 600; color: var(--foreground); }
+  .apps-grid { display: grid; gap: 10px; margin-top: 24px; }
+  .acc { overflow: hidden; }
+  .acc-head { display: flex; align-items: center; gap: 12px; width: 100%; padding: 16px 18px; background: none; border: 0; color: var(--foreground); cursor: pointer; text-align: left; font: inherit; }
+  .acc-ico { width: 38px; height: 38px; border-radius: 10px; background: color-mix(in srgb, var(--primary) 15%, transparent); color: var(--primary); display: grid; place-items: center; font: 700 13px var(--font-sans); flex: 0 0 auto; }
+  .acc-main { flex: 1; min-width: 0; }
+  .acc-main b { font-size: 15px; display: block; }
+  .acc-sub { font-size: 12.5px; color: var(--muted-foreground); display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .acc-sub .gh-mini { width: 14px; height: 14px; border-radius: 4px; background: #24292f; color: #fff; font: 700 7.5px var(--font-mono); display: inline-grid; place-items: center; flex: 0 0 auto; }
+  .dot { width: 8px; height: 8px; border-radius: 999px; flex: 0 0 auto; }
+  .dot.on { background: var(--success); box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 25%, transparent); }
+  .dot.off { background: var(--muted-foreground); }
+  .acc-state { font-size: 12.5px; color: var(--muted-foreground); }
+  .chev { color: var(--muted-foreground); transition: transform .25s var(--ease-out-quart); flex: 0 0 auto; }
+  .acc[data-open] .chev { transform: rotate(180deg); }
+  .acc-body { border-top: 1px solid var(--border); padding: 16px 18px 18px; }
+  .sec { border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; }
+  .sec > summary { list-style: none; display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer; font-size: 13.5px; font-weight: 600; }
+  .sec > summary::-webkit-details-marker { display: none }
+  .sec > summary .badge { margin-left: auto; }
+  .sec-body { padding: 2px 14px 14px; }
+  .drow { display: flex; align-items: center; gap: 10px; padding: 9px 0; }
+  .drow + .drow { border-top: 1px solid var(--border); }
+  .drow .cat-i { width: 26px; height: 26px; border-radius: 7px; }
+  .drow input { flex: 1; min-width: 0; background: var(--background); color: var(--foreground); border: 1px solid var(--input); border-radius: 8px; padding: 7px 10px; font: 12.5px var(--font-mono); }
+  .drow .rm { background: none; border: 0; color: var(--muted-foreground); font-size: 16px; cursor: pointer; padding: 4px; }
+  .drow .rm:hover { color: var(--destructive); }
+  .addmenu { position: relative; margin-top: 10px; }
+  .addmenu-list { position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; min-width: 230px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 16px 40px rgb(0 0 0 / .35); padding: 6px; }
+  .addmenu-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 0; background: none; color: var(--foreground); font: 13.5px var(--font-sans); border-radius: 8px; cursor: pointer; text-align: left; }
+  .addmenu-item:hover:not(:disabled) { background: var(--muted); }
+  .addmenu-item:disabled { opacity: .5; cursor: not-allowed; }
+  .addmenu-item .badge { margin-left: auto; }
+  .savebar { position: sticky; bottom: 10px; display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 14px; border-radius: var(--radius); background: color-mix(in srgb, var(--primary) 10%, var(--card)); border: 1px solid color-mix(in srgb, var(--primary) 40%, transparent); animation: pop .25s var(--ease-out-quart); }
+  .savebar span { font-size: 13px; flex: 1; }
+  @keyframes pop { from { opacity: 0; transform: translateY(6px) } to { opacity: 1 } }
+  .mini { font-size: 12.5px; padding: 8px 12px !important; }
+  .quick { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .quick a { font-size: 12.5px; color: var(--primary); text-decoration: none; border: 1px solid var(--border); padding: 5px 12px; border-radius: 999px; }
+  .quick a:hover { background: var(--muted); }
+  .row2 { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 13.5px; }
+  .danger-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+  .pause { font-size: 12.5px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border); background: transparent; color: var(--foreground); cursor: pointer; }
+  .deliv-out { font: 11.5px var(--font-mono); color: var(--muted-foreground); margin-top: 10px; white-space: pre-wrap; max-height: 180px; overflow-y: auto; }
+  .guide { margin-top: 12px; font-size: 13px; color: var(--muted-foreground); }
+  .guide summary { cursor: pointer; font-weight: 600; color: var(--foreground); list-style: none; }
   .guide ol { margin: 10px 0 0 18px; padding: 0; }
   .guide li { margin: 6px 0; }
   .guide a { color: var(--primary); }
   .prompt-t { width: 100%; margin-top: 10px; background: var(--background); color: var(--muted-foreground); border: 1px solid var(--input); border-radius: 8px; padding: 10px; font: 11.5px/1.6 var(--font-mono); resize: vertical; }
+  .save-msg { font-size: 12.5px; }
   @media (max-width: 640px) {
-    .container { padding: 0 14px; }
-    .app-card { padding: 16px; }
-    .app-head { flex-direction: column; align-items: flex-start; }
+    .container { padding: 0 12px; }
+    .acc-head { padding: 14px; }
+    .acc-body { padding: 12px; }
+    .acc-state { display: none; }
     .quick { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
     .quick a { flex: 0 0 auto; }
-    .cat-sub { padding-left: 0; }
   }
   dialog#wiz { margin: auto; width: min(560px, calc(100vw - 24px)); border: 1px solid var(--border); border-radius: 16px; background: var(--card); color: var(--foreground); padding: 0; }
   dialog#wiz::backdrop { background: rgb(0 0 0 / .55); backdrop-filter: blur(4px); }
@@ -137,146 +149,197 @@ const api = async (method, url, body) => {
 }
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
 
+const DTYPES = { discord: ['DC','#5865F2','Discord','Discord → Server Settings → Integrations → Webhooks → Copy URL'], slack: ['SL','#611f69','Slack','Slack → api.slack.com/apps → Incoming Webhooks → Copy URL'], webhook: ['WH','#16a34a','Any webhook','Any HTTPS endpoint — we POST a JSON event per feedback'] }
+const SOON = [['GL','#fc6d26','GitLab'],['LN','#5E6AD2','Linear'],['JR','#2684FF','Jira'],['NT','#37352f','Notion'],['TG','#229ED9','Telegram'],['MS','#6264A7','Teams']]
+
 function card(t) {
   const el = document.createElement('section')
-  el.className = 'card app-card'
+  el.className = 'card acc'
   el.dataset.id = t.tenantId
+  let dests = [...(t.destinations || [])]
+
+  const summaryLine = () => `<span class="gh-mini">GH</span> ${esc(t.repo)}${dests.length ? ` · +${dests.length} destination${dests.length > 1 ? 's' : ''}` : ''}`
+
+  const destRows = () => dests.map((d, i) => {
+    const [mono, color, name, hint] = DTYPES[d.type]
+    return `<div class="drow" data-i="${i}">
+      <i class="cat-i" style="background:${color}">${mono}</i>
+      <input class="d-url" placeholder="https://…" value="${esc(d.url)}" title="${esc(hint)}">
+      <button class="rm" title="Remove ${name}">×</button>
+    </div>`
+  }).join('') || '<p style="font-size:12.5px;color:var(--muted-foreground);padding:6px 0">Only GitHub for now — add somewhere else below.</p>'
+
   el.innerHTML = `
-    <div class="app-head">
-      <div><h3>${esc(t.appName)}</h3><div class="b">${esc(t.bundleId)} · ${esc(t.repo)} · <span class="code">${t.tenantId}</span></div></div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <span class="pause ${t.enabled ? 'badge-on' : 'badge-off'}" data-role="state">${t.enabled ? 'Active' : 'Paused'}</span>
+    <button class="acc-head" aria-expanded="false">
+      <span class="acc-ico">${esc((t.appName || '?').split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase())}</span>
+      <span class="acc-main"><b>${esc(t.appName)}</b><span class="acc-sub" data-role="summary">${summaryLine()}</span></span>
+      <span class="dot ${t.enabled ? 'on' : 'off'}" data-role="dot"></span>
+      <span class="acc-state" data-role="state">${t.enabled ? 'Live' : 'Paused'}</span>
+      <svg class="chev" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="acc-body" hidden>
+      <div class="quick">
+        <a href="${t.links.issues}" target="_blank" rel="noopener">GitHub issues ↗</a>
+        <a href="${t.links.ascFeedback}" target="_blank" rel="noopener">ASC feedback ↗</a>
+        <a href="${t.links.ascCrashes}" target="_blank" rel="noopener">ASC crashes ↗</a>
+        <a href="${t.links.ascApp}" target="_blank" rel="noopener">TestFlight ↗</a>
+      </div>
+
+      <details class="sec" open>
+        <summary><i class="cat-i" style="background:#24292f;width:22px;height:22px;font-size:9px">GH</i> Destinations <span class="badge badge-success-light">GitHub live</span></summary>
+        <div class="sec-body">
+          <div data-role="drows">${destRows()}</div>
+          <div class="addmenu">
+            <button class="btn btn-outline mini" data-role="addbtn">+ Add destination</button>
+            <div class="addmenu-list" data-role="addlist" hidden>
+              ${Object.entries(DTYPES).map(([k, [mono, color, name]]) =>
+                `<button class="addmenu-item" data-add="${k}"><i class="cat-i" style="background:${color};width:22px;height:22px;font-size:9px">${mono}</i>${name}</button>`).join('')}
+              ${SOON.map(([mono, color, name]) =>
+                `<button class="addmenu-item" disabled><i class="cat-i" style="background:${color};width:22px;height:22px;font-size:9px">${mono}</i>${name}<span class="badge badge-secondary">soon</span></button>`).join('')}
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="sec">
+        <summary>Pipeline & triage ${t.routineConfigured ? '<span class="badge badge-success-light">routine on</span>' : ''}</summary>
+        <div class="sec-body">
+          <label class="row2"><input type="checkbox" class="switch" data-role="p-issue" ${t.pipeline.createIssue !== false ? 'checked' : ''}> Create GitHub issue</label>
+          <label class="row2"><input type="checkbox" class="switch" data-role="p-routine" ${t.pipeline.fireRoutine !== false ? 'checked' : ''}> Fire Claude triage routine</label>
+          <div class="field" style="margin-top:8px"><label>Labels</label><input class="mini" data-role="labels" value="${esc(t.labels)}"></div>
+          <div class="grid-2">
+            <div class="field"><label>Routine ID</label><input class="mini" data-role="rid" placeholder="trig_…"></div>
+            <div class="field"><label>Routine token <span class="desc">write-only</span></label><input class="mini" type="password" data-role="rtok" placeholder="${t.routineConfigured ? '•••••• (set)' : 'sk-ant-oat01-…'}"></div>
+          </div>
+          <details class="guide">
+            <summary>How to set up your Claude triage routine ▸</summary>
+            <ol>
+              <li>Open <a href="https://claude.ai/code/routines" target="_blank" rel="noopener">claude.ai/code/routines ↗</a> → New routine, connected to <b>${esc(t.repo)}</b></li>
+              <li>Paste this prompt <button class="btn btn-outline mini" data-role="copyprompt">Copy</button></li>
+              <li>Add trigger → API → Generate token (shown once)</li>
+              <li>Paste id + token above, then Save</li>
+            </ol>
+            <textarea class="prompt-t" data-role="prompttext" readonly rows="4">You are the TestFlight feedback triage agent for this repo. A webhook files each TestFlight feedback/crash as a GitHub issue labeled testflight-feedback + needs-triage, with screenshots, device metadata, and crash logs embedded. The fire payload may include a specific issue URL — start there; otherwise list open issues with those labels. CLAIM-FIRST: re-read labels before analyzing; if needs-triage is gone, skip silently; claim by swapping needs-triage → triaged. Then: read the feedback and screenshots; find root cause in the code (crashes: read the stack); comment analysis with file/line refs, severity, fix suggestion; label type + priority P0-P3; open a fix PR for small confident fixes; dedupe and link duplicates. Never close a feedback issue without a fix PR or duplicate link.</textarea>
+          </details>
+        </div>
+      </details>
+
+      <details class="sec">
+        <summary>History</summary>
+        <div class="sec-body">
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline mini" data-role="activity">Activity</button>
+            <button class="btn btn-outline mini" data-role="deliv">Apple deliveries</button>
+          </div>
+          <div class="deliv-out" data-role="delivout"></div>
+        </div>
+      </details>
+
+      <div class="savebar" data-role="savebar" hidden>
+        <span>Unsaved changes</span>
+        <button class="btn btn-outline mini" data-role="discard">Discard</button>
+        <button class="btn btn-primary mini" data-role="save">Save</button>
+      </div>
+
+      <div class="danger-row">
         <button class="pause" data-role="toggle">${t.enabled ? 'Pause' : 'Resume'}</button>
         <button class="pause" data-role="delete" style="color:var(--destructive)">Disconnect</button>
       </div>
-    </div>
-    <div class="quick">
-      <a href="${t.links.ascFeedback}" target="_blank" rel="noopener">ASC feedback ↗</a>
-      <a href="${t.links.ascCrashes}" target="_blank" rel="noopener">ASC crashes ↗</a>
-      <a href="${t.links.ascApp}" target="_blank" rel="noopener">TestFlight builds ↗</a>
-      <a href="${t.links.issues}" target="_blank" rel="noopener">GitHub issues ↗</a>
-      <a href="#" data-role="activity">Activity</a>
-      <a href="#" data-role="deliv">Apple delivery log</a>
-    </div>
-    <div class="cfg">
-      <div>
-        <h4>Destinations</h4>
-        <div class="cat">
-          <div class="cat-row">
-            <i class="cat-i" style="background:#24292f">GH</i>
-            <div class="cat-t"><b>GitHub Issues</b><span>${esc(t.repo)}</span></div>
-            <span class="badge badge-success-light">live</span>
-            <input type="checkbox" class="switch" checked disabled title="GitHub is the primary destination">
-          </div>
-          ${[['DC','#5865F2','Discord','discord','Discord → Server Settings → Integrations → Webhooks → New Webhook → Copy URL'],['SL','#611f69','Slack','slack','Slack → api.slack.com/apps → Incoming Webhooks → Add to workspace → Copy URL'],['WH','#16a34a','Any webhook','webhook','Any HTTPS endpoint — we POST a JSON event per feedback']].map(([m,c,n,type,hint]) => {
-            const existing = (t.destinations || []).find(d => d.type === type)
-            return `
-          <div class="cat-sel" data-dtype="${type}">
-            <div class="cat-row">
-              <i class="cat-i" style="background:${c}">${m}</i>
-              <div class="cat-t"><b>${n}</b><span>${existing ? esc(existing.url) : 'same event, delivered there'}</span></div>
-              <input type="checkbox" class="switch d-on" ${existing ? 'checked' : ''}>
-            </div>
-            <div class="cat-sub" ${existing ? '' : 'hidden'}>
-              <input class="mini d-url" placeholder="https://…" value="${esc(existing?.url || '')}" style="background:var(--background);color:var(--foreground);border:1px solid var(--input);border-radius:8px;font-family:var(--font-mono);width:100%">
-              <div class="cat-hint">${hint}</div>
-            </div>
-          </div>`}).join('')}
-          ${[['GL','#fc6d26','GitLab'],['LN','#5E6AD2','Linear'],['JR','#2684FF','Jira'],['NT','#37352f','Notion'],['TG','#229ED9','Telegram'],['MS','#6264A7','Teams']].map(([m,c,n]) => `
-          <div class="cat-row soon">
-            <i class="cat-i" style="background:${c}">${m}</i>
-            <div class="cat-t"><b>${n}</b><span>same issue, delivered there</span></div>
-            <span class="badge badge-secondary">coming soon</span>
-            <input type="checkbox" class="switch" disabled>
-          </div>`).join('')}
-        </div>
-      </div>
-      <div>
-        <h4>Pipeline</h4>
-        <label class="row2"><input type="checkbox" class="switch" data-role="p-issue" ${t.pipeline.createIssue !== false ? 'checked' : ''}> Create GitHub issue</label>
-        <label class="row2"><input type="checkbox" class="switch" data-role="p-routine" ${t.pipeline.fireRoutine !== false ? 'checked' : ''}> Fire Claude triage routine ${t.routineConfigured ? '' : '<span style="color:var(--muted-foreground)">(no routine configured)</span>'}</label>
-        <div class="field" style="margin-top:8px"><label>Labels</label><input class="mini" data-role="labels" value="${esc(t.labels)}"></div>
-        <div class="field"><label>Routine ID <span class="desc">optional</span></label><input class="mini" data-role="rid" placeholder="trig_…"></div>
-        <div class="field"><label>Routine token <span class="desc">write-only</span></label><input class="mini" type="password" data-role="rtok" placeholder="${t.routineConfigured ? '••••••• (set)' : 'sk-ant-oat01-…'}"></div>
-        <details class="guide">
-          <summary>How to set up your Claude triage routine</summary>
-          <ol>
-            <li>Open <a href="https://claude.ai/code/routines" target="_blank" rel="noopener">claude.ai/code/routines ↗</a> → New routine</li>
-            <li>Connect it to <b>${esc(t.repo)}</b> as the repository</li>
-            <li>Paste this prompt: <button class="btn btn-outline mini" data-role="copyprompt" style="margin-left:6px">Copy prompt</button></li>
-            <li>Add trigger → <b>API</b> → Generate token (shown once!)</li>
-            <li>Paste the routine id (trig_…) and token above, then Save</li>
-          </ol>
-          <textarea class="prompt-t" data-role="prompttext" readonly rows="5">You are the TestFlight feedback triage agent for this repo. A webhook files each TestFlight feedback/crash as a GitHub issue labeled testflight-feedback + needs-triage, with screenshots, device metadata, and crash logs embedded. The fire payload may include a specific issue URL — start there; otherwise list open issues labeled needs-triage + testflight-feedback.
-
-CLAIM-FIRST: before analyzing an issue, re-read its labels; if needs-triage is gone another run owns it — skip silently. Claim by swapping needs-triage → triaged.
-
-For each claimed issue: 1) read comment, screenshots, crash log; find the screen/feature involved. 2) investigate the code for root cause (crashes: read the stack). 3) comment your analysis with file/line refs, severity, suggested fix. 4) label type (bug/crash/ui/enhancement/question) + priority P0-P3. 5) small confident fix → branch + PR referencing the issue. 6) dedupe: link + close duplicates. Never close a feedback issue without a fix PR or duplicate link.</textarea>
-        </details>
-      </div>
-    </div>
-    <div class="save-row">
-      <button class="btn btn-primary mini" data-role="save">Save changes</button>
-      <span class="save-msg" data-role="msg"></span>
-    </div>
-    <div class="deliv-out" data-role="delivout"></div>`
+    </div>`
 
   const q = (r) => el.querySelector(`[data-role="${r}"]`)
-  el.querySelectorAll('.cat-sel').forEach(row => {
-    const sw = row.querySelector('.d-on'), sub = row.querySelector('.cat-sub')
-    sw.onchange = () => { sub.hidden = !sw.checked; if (sw.checked) row.querySelector('.d-url').focus() }
+  const head = el.querySelector('.acc-head')
+  const body = el.querySelector('.acc-body')
+  head.onclick = () => {
+    const open = body.hidden
+    document.querySelectorAll('.acc').forEach(a => { if (a !== el) { a.querySelector('.acc-body').hidden = true; a.removeAttribute('data-open'); a.querySelector('.acc-head').setAttribute('aria-expanded', 'false') } })
+    body.hidden = !open
+    el.toggleAttribute('data-open', open)
+    head.setAttribute('aria-expanded', String(open))
+  }
+
+  const markDirty = () => { q('savebar').hidden = false }
+  const rerenderDests = () => {
+    q('drows').innerHTML = destRows()
+    wireDests()
+    q('summary').innerHTML = summaryLine()
+  }
+  const wireDests = () => {
+    q('drows').querySelectorAll('.drow').forEach(row => {
+      row.querySelector('.d-url').oninput = (e) => { dests[+row.dataset.i].url = e.target.value.trim(); markDirty() }
+      row.querySelector('.rm').onclick = () => { dests.splice(+row.dataset.i, 1); rerenderDests(); markDirty() }
+    })
+  }
+  wireDests()
+
+  q('addbtn').onclick = (e) => { e.stopPropagation(); q('addlist').hidden = !q('addlist').hidden }
+  document.addEventListener('click', () => { const l = q('addlist'); if (l) l.hidden = true })
+  q('addlist').querySelectorAll('[data-add]').forEach(b => b.onclick = (e) => {
+    e.stopPropagation()
+    dests.push({ type: b.dataset.add, url: '' })
+    q('addlist').hidden = true
+    rerenderDests(); markDirty()
+    const inputs = q('drows').querySelectorAll('.d-url'); inputs[inputs.length - 1]?.focus()
   })
+
+  ;['p-issue', 'p-routine', 'labels', 'rid', 'rtok'].forEach(r => { q(r).addEventListener('input', markDirty); q(r).addEventListener('change', markDirty) })
+
+  q('discard').onclick = () => { dests = [...(t.destinations || [])]; rerenderDests(); q('labels').value = t.labels; q('rid').value = ''; q('rtok').value = ''; q('p-issue').checked = t.pipeline.createIssue !== false; q('p-routine').checked = t.pipeline.fireRoutine !== false; q('savebar').hidden = true }
+
   q('save').onclick = async () => {
-    const destinations = [...el.querySelectorAll('.cat-sel')]
-      .filter(r => r.querySelector('.d-on').checked && r.querySelector('.d-url').value.trim())
-      .map(r => ({ type: r.dataset.dtype, url: r.querySelector('.d-url').value.trim() }))
     const patch = {
       labels: q('labels').value.trim(),
-      destinations,
+      destinations: dests.filter(d => d.url),
       pipeline: { createIssue: q('p-issue').checked, fireRoutine: q('p-routine').checked }
     }
     if (q('rid').value.trim()) patch.routineId = q('rid').value.trim()
     if (q('rtok').value.trim()) patch.routineToken = q('rtok').value.trim()
-    q('msg').textContent = 'Saving…'
-    try { await api('POST', '/api/tenants', { tenantId: t.tenantId, patch }); q('msg').textContent = '✓ Saved'; q('msg').style.color = 'var(--success)' }
-    catch (e) { q('msg').textContent = e.message; q('msg').style.color = 'var(--destructive)' }
+    q('save').disabled = true; q('save').textContent = 'Saving…'
+    try {
+      const r = await api('POST', '/api/tenants', { tenantId: t.tenantId, patch })
+      t.destinations = r.tenant.destinations; t.labels = r.tenant.labels; t.pipeline = r.tenant.pipeline
+      dests = [...t.destinations]
+      rerenderDests()
+      q('savebar').hidden = true
+    } catch (e) { alert(e.message) }
+    q('save').disabled = false; q('save').textContent = 'Save'
   }
+
+  q('copyprompt')?.addEventListener('click', (ev) => {
+    ev.preventDefault(); ev.stopPropagation()
+    navigator.clipboard.writeText(q('prompttext').value)
+    ev.target.textContent = '✓'
+    setTimeout(() => { ev.target.textContent = 'Copy' }, 1500)
+  })
+
   q('toggle').onclick = async () => {
     const enable = q('toggle').textContent === 'Resume'
     q('toggle').disabled = true
     try {
       await api('POST', '/api/tenants', { tenantId: t.tenantId, patch: { enabled: enable } })
-      q('state').textContent = enable ? 'Active' : 'Paused'
-      q('state').className = `pause ${enable ? 'badge-on' : 'badge-off'}`
+      t.enabled = enable
+      q('state').textContent = enable ? 'Live' : 'Paused'
+      q('dot').className = `dot ${enable ? 'on' : 'off'}`
       q('toggle').textContent = enable ? 'Pause' : 'Resume'
     } catch (e) { alert(e.message) }
     q('toggle').disabled = false
   }
+
   q('delete').onclick = async () => {
     if (!confirm(`Disconnect ${t.appName}? The Apple webhook will be deleted. Issues already created stay.`)) return
     try { await api('DELETE', '/api/tenants', { tenantId: t.tenantId }); el.remove() } catch (e) { alert(e.message) }
   }
-  q('copyprompt')?.addEventListener('click', (ev) => {
-    ev.preventDefault()
-    navigator.clipboard.writeText(q('prompttext').value)
-    ev.target.textContent = '✓ Copied'
-    setTimeout(() => { ev.target.textContent = 'Copy prompt' }, 1500)
-  })
-  q('activity').onclick = async (ev) => {
-    ev.preventDefault()
-    q('delivout').textContent = 'loading activity…'
+
+  q('activity').onclick = async () => {
+    q('delivout').textContent = 'loading…'
     try {
       const r = await api('GET', `/api/tenants?logs=${t.tenantId}`)
       q('delivout').textContent = r.log.length
-        ? r.log.map(e => {
-            const extra = e.issueUrl || e.sessionUrl || e.error || e.type_ || (e.type === 'destination_sent' ? e.type : '') || ''
-            return `${e.t.slice(0, 19).replace('T', ' ')}  ${e.type}${e.by ? '  by ' + e.by : ''}${e.issueUrl ? '  ' + e.issueUrl : ''}${e.error ? '  ' + e.error : ''}${e.eventType ? '  ' + e.eventType : ''}`
-          }).join('\n')
-        : 'No activity recorded yet.'
+        ? r.log.map(e => `${e.t.slice(0, 19).replace('T', ' ')}  ${e.type}${e.by ? '  by ' + e.by : ''}${e.issueUrl ? '  ' + e.issueUrl : ''}${e.dest ? '  ' + e.dest : ''}${e.error ? '  ' + e.error : ''}`).join('\n')
+        : 'No activity yet.'
     } catch (e) { q('delivout').textContent = e.message }
   }
-  q('deliv').onclick = async (ev) => {
-    ev.preventDefault()
+  q('deliv').onclick = async () => {
     q('delivout').textContent = 'loading…'
     try {
       const r = await api('GET', `/api/tenants?deliveries=${t.tenantId}`)
@@ -285,6 +348,7 @@ For each claimed issue: 1) read comment, screenshots, crash log; find the screen
         : 'No deliveries in the last hour.'
     } catch (e) { q('delivout').textContent = e.message }
   }
+
   return el
 }
 
