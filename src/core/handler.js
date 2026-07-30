@@ -3,6 +3,7 @@ import { verifySignature } from './verify.js'
 import { fetchScreenshotSubmission, fetchCrashSubmission, downloadImage } from './asc.js'
 import { alreadyFiled, uploadScreenshot, createIssue } from './github.js'
 import { fireRoutine } from './routine.js'
+import { sendDestinations } from './destinations.js'
 
 const EVENT_HANDLERS = {
   betaFeedbackScreenshotSubmissionCreated: fetchScreenshotSubmission,
@@ -49,13 +50,24 @@ async function processEvent(cfg, event) {
     }
   }
 
-  const issueUrl = await createIssue(cfg, fb, screenshotLinks)
-  console.log(`issue created: ${issueUrl}`)
+  let issueUrl = null
+  if (cfg.pipeline?.createIssue !== false) {
+    issueUrl = await createIssue(cfg, fb, screenshotLinks)
+    console.log(`issue created: ${issueUrl}`)
+  }
+
+  if (cfg.pipeline?.fireRoutine !== false) {
+    try {
+      await fireRoutine(cfg, fb, issueUrl)
+    } catch (e) {
+      console.error(`routine fire failed (issue still created): ${e.message}`)
+    }
+  }
 
   try {
-    await fireRoutine(cfg, fb, issueUrl)
+    await sendDestinations(cfg, fb, issueUrl)
   } catch (e) {
-    console.error(`routine fire failed (issue still created): ${e.message}`)
+    console.error(`destinations failed: ${e.message}`)
   }
 }
 

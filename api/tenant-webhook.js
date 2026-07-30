@@ -23,7 +23,9 @@ function tenantCfg(t) {
       id: t.routineId || '',
       token: t.routineToken || '',
       fireUrl: (id) => `https://api.anthropic.com/v1/claude_code/routines/${id}/fire`
-    }
+    },
+    destinations: t.destinations || [],
+    pipeline: t.pipeline || { createIssue: true, fireRoutine: true }
   }
 }
 
@@ -32,7 +34,8 @@ async function resolveTenant(request) {
   const id = url.searchParams.get('tenant') || url.pathname.match(/\/t\/([a-z0-9-]+)\/webhook/)?.[1]
   if (!id) return { error: json(404, { error: 'missing tenant' }) }
   const tenant = await getTenant(process.env, id)
-  if (!tenant) return { error: json(404, { error: 'unknown tenant' }) }
+  if (!tenant || tenant.deleted) return { error: json(404, { error: 'unknown tenant' }) }
+  if (tenant.enabled === false) return { error: json(200, { received: true, note: 'tenant paused' }) }
   return { tenant }
 }
 

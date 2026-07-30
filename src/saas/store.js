@@ -45,6 +45,22 @@ export async function getTenant(env, id) {
   return decryptTenant(env, blob)
 }
 
+export async function getOwnerTenants(env, login) {
+  const file = await gh(env, 'GET', `/repos/${env.TENANT_STORE_REPO}/contents/owners/${encodeURIComponent(login)}.json`)
+  if (!file) return []
+  try { return JSON.parse(atob(file.content.replace(/\n/g, ''))) } catch { return [] }
+}
+
+export async function setOwnerTenants(env, login, ids) {
+  const path = `/repos/${env.TENANT_STORE_REPO}/contents/owners/${encodeURIComponent(login)}.json`
+  const existing = await gh(env, 'GET', path)
+  await gh(env, 'PUT', path, {
+    message: `owner index ${login}`,
+    content: btoa(JSON.stringify(ids)),
+    ...(existing ? { sha: existing.sha } : {})
+  })
+}
+
 export async function putTenant(env, id, tenant) {
   const existing = await gh(env, 'GET', `/repos/${env.TENANT_STORE_REPO}/contents/tenants/${id}.json`)
   const content = btoa(await encryptTenant(env, tenant))

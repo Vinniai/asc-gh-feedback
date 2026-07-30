@@ -25,11 +25,76 @@
             mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, black 30%, transparent 75%);
   }
 
-  @keyframes rise { from { opacity: 0; transform: translateY(18px) } to { opacity: 1; transform: none } }
-  @keyframes float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
-  .rise { animation: rise .7s cubic-bezier(.2,.7,.2,1) both; }
-  .d1 { animation-delay: .05s } .d2 { animation-delay: .15s } .d3 { animation-delay: .25s } .d4 { animation-delay: .35s }
-  @media (prefers-reduced-motion: reduce) { .rise, .phone-wrap, .issue-card { animation: none !important } }
+  /* Entrances: opacity + translate + blur, ease-out-quart (Emil Kowalski school:
+     fast, physical, transform/opacity/filter only) */
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); filter: blur(5px) } to { opacity: 1; transform: none; filter: blur(0) } }
+  @keyframes pop  { from { opacity: 0; transform: translateY(10px) scale(.96); filter: blur(4px) } to { opacity: 1; transform: none; filter: blur(0) } }
+  @keyframes sheet-up { from { transform: translateY(105%) } to { transform: none } }
+  @keyframes float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
+  @keyframes fill { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+  .rise { animation: rise .55s var(--ease-out-quart) both; }
+  .d1 { animation-delay: .04s } .d2 { animation-delay: .12s } .d3 { animation-delay: .2s } .d4 { animation-delay: .3s }
+
+  /* Scroll reveal (IntersectionObserver adds .in) */
+  .js .reveal { opacity: 0; transform: translateY(16px); filter: blur(5px);
+    transition: opacity .55s var(--ease-out-quart), transform .55s var(--ease-out-quart), filter .55s var(--ease-out-quart); }
+  .reveal.in { opacity: 1; transform: none; filter: blur(0); }
+  .js .reveal-stagger > * { opacity: 0; transform: translateY(16px); filter: blur(5px);
+    transition: opacity .5s var(--ease-out-quart), transform .5s var(--ease-out-quart), filter .5s var(--ease-out-quart); }
+  .reveal-stagger.in > * { opacity: 1; transform: none; filter: blur(0); }
+  .reveal-stagger.in > *:nth-child(1) { transition-delay: 0s }
+  .reveal-stagger.in > *:nth-child(2) { transition-delay: .07s }
+  .reveal-stagger.in > *:nth-child(3) { transition-delay: .14s }
+  .reveal-stagger.in > *:nth-child(4) { transition-delay: .21s }
+  .reveal-stagger.in > *:nth-child(5) { transition-delay: .28s }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rise, .phone-wrap, .issue-card, .tf-sheet, .util-bar i { animation: none !important }
+    .reveal, .reveal-stagger > * { opacity: 1 !important; transform: none !important; filter: none !important; transition: none !important }
+  }
+
+
+  .stage::before { content: ""; position: absolute; inset: -40px -60px; z-index: -1; border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--primary) 26%, transparent), transparent 70%); filter: blur(30px); }
+  .trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 34px; max-width: 470px; }
+  @media (max-width: 560px) { .trio { grid-template-columns: 1fr 1fr } }
+  .trio .t-i { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; font-size: 17px;
+    background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
+  .trio h4 { font-size: 13.5px; margin-top: 10px; }
+  .trio p { font-size: 12.5px; color: var(--muted-foreground); margin-top: 3px; line-height: 1.45; }
+  .stars { color: #fbbf24; letter-spacing: 2px; font-size: 13px; }
+
+  /* Feedback form in phone */
+  .tf-seg { display: flex; background: #26262e; border-radius: 10px; padding: 3px; margin-top: 12px; }
+  .tf-seg span { flex: 1; text-align: center; font-size: 11.5px; font-weight: 600; padding: 6px 0; border-radius: 8px; color: #9a9aa4; }
+  .tf-seg .on { background: #4f6ef7; color: #fff; }
+  .tf-label { font-size: 10.5px; font-weight: 700; color: #9a9aa4; margin: 12px 0 6px; text-transform: uppercase; letter-spacing: .06em; }
+  .tf-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tf-tag { font-size: 10.5px; padding: 4px 10px; border-radius: 999px; background: #26262e; color: #d7d7de; }
+  .tf-tag.on { background: rgb(79 110 247 / .25); color: #a5b4ff; }
+  .tf-submit { margin-top: 14px; background: #4f6ef7; color: #fff; text-align: center; font-size: 12px; font-weight: 700; padding: 10px; border-radius: 10px; }
+  .tf-note { text-align: center; font-size: 9.5px; color: #6b6b76; margin-top: 8px; }
+
+  /* Destinations marquee */
+  .dest { padding: 64px 0 8px; text-align: center; }
+  .dest h2 { font-size: 26px; letter-spacing: -.02em; }
+  .dest .cap { color: var(--muted-foreground); font-size: 14px; margin-top: 8px; }
+  .dest .cap b { color: var(--success); }
+  .marquee { margin-top: 30px; overflow: hidden; position: relative;
+    -webkit-mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
+            mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent); }
+  .m-track { display: flex; gap: 12px; width: max-content; animation: marquee 28s linear infinite; }
+  .marquee:hover .m-track { animation-play-state: paused; }
+  .m-track:nth-of-type(2) { animation: marquee2 34s linear infinite; margin-top: 12px; }
+  @keyframes marquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+  @keyframes marquee2 { from { transform: translateX(-50%) } to { transform: translateX(0) } }
+  .chip { display: inline-flex; align-items: center; gap: 9px; padding: 10px 18px 10px 12px; border: 1px solid var(--border);
+    border-radius: 999px; background: var(--card); font-size: 14px; font-weight: 600; white-space: nowrap; }
+  .chip i { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; font: 700 10.5px var(--font-mono); color: #fff; font-style: normal; }
+  .chip small { font-size: 10.5px; color: var(--muted-foreground); font-weight: 500; }
+  .chip.live { border-color: color-mix(in srgb, var(--success) 45%, transparent); }
+  .chip.live small { color: var(--success); }
+  @media (prefers-reduced-motion: reduce) { .m-track { animation: none !important; flex-wrap: wrap; width: auto; justify-content: center } }
 
   /* HERO split layout */
   .hero { position: relative; display: grid; grid-template-columns: 1.05fr .95fr; gap: 40px; align-items: center; padding: 72px 0 40px; }
@@ -76,12 +141,14 @@
   .widget .row b { color: #e8e8ee; font-weight: 700; }
   .widget .bad { color: #f87171 !important; }
   .util-bar { margin-top: 12px; height: 8px; border-radius: 4px; background: #26262e; overflow: hidden; }
-  .util-bar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #f59e0b, #ef4444); }
+  .util-bar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #f59e0b, #ef4444);
+    transform-origin: left; animation: fill 1s .9s var(--ease-out-quart) both; }
 
   /* TestFlight-style feedback sheet */
   .tf-sheet {
     margin-top: auto; background: #1c1c22; border-radius: 22px 22px 0 0; padding: 14px 16px 30px;
     border-top: 1px solid #32323a; box-shadow: 0 -12px 40px rgb(0 0 0 / .5); z-index: 2;
+    animation: sheet-up .6s .45s var(--ease-spring) both;
   }
   .tf-grab { width: 36px; height: 4px; border-radius: 2px; background: #4a4a52; margin: 0 auto 12px; }
   .tf-head { display: flex; align-items: center; justify-content: space-between; }
@@ -100,7 +167,7 @@
     position: absolute; right: -8px; bottom: 42px; width: 300px; z-index: 4;
     background: var(--card); border: 1px solid var(--border); border-radius: 14px;
     box-shadow: 0 18px 50px rgb(0 0 0 / .35); padding: 14px 16px;
-    animation: rise .8s .5s cubic-bezier(.2,.7,.2,1) both;
+    animation: pop .5s 1.05s var(--ease-spring) both;
   }
   @media (max-width: 1080px) { .issue-card { right: 0 } }
   @media (max-width: 880px) { .issue-card { position: static; width: 100%; max-width: 340px; margin: -26px auto 0; } }
@@ -150,8 +217,12 @@
   .faq { max-width: 640px; margin: 0 auto; }
   .faq details { border-bottom: 1px solid var(--border); padding: 16px 4px; }
   .faq summary { cursor: pointer; font-weight: 600; font-size: 15px; list-style: none; display: flex; justify-content: space-between; align-items: center; }
-  .faq summary::after { content: "+"; color: var(--muted-foreground); font-size: 18px; }
-  .faq details[open] summary::after { content: "–"; }
+  .faq summary::-webkit-details-marker { display: none }
+  .faq summary::after { content: "+"; color: var(--muted-foreground); font-size: 18px; transition: transform var(--dur-base) var(--ease-out-quart); }
+  .faq details[open] summary::after { transform: rotate(45deg); }
+  .faq .body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--dur-base) var(--ease-out-quart); }
+  .faq details[open] .body { grid-template-rows: 1fr; }
+  .faq .body > div { overflow: hidden; }
   .faq p { color: var(--muted-foreground); font-size: 14px; margin-top: 10px; }
 
   .final-cta { text-align: center; padding: 80px 0 20px; }
@@ -160,6 +231,7 @@
 </style>
 </head>
 <body>
+<script>document.documentElement.classList.add("js")</script>
 <div class="glow" aria-hidden="true"></div>
 <div class="grid-bg" aria-hidden="true"></div>
 <div class="container">
@@ -169,6 +241,7 @@
       <a href="#how">How it works</a>
       <a href="#pricing">Pricing</a>
       <a href="#faq">FAQ</a>
+      <a href="/dash.html">Dashboard</a>
       <a href="https://github.com/Vinniai/asc-gh-feedback">GitHub</a>
       <a class="btn btn-primary" href="/setup.html" style="margin-left:8px">Get started <span class="arrow">→</span></a>
     </nav>
@@ -177,8 +250,8 @@
   <section class="hero">
     <div>
       <span class="pill rise d1"><span class="tag">NEW</span> AI triage now opens fix PRs automatically</span>
-      <h1 class="rise d2">TestFlight feedback,<br><em>triaged before you read it</em></h1>
-      <p class="sub rise d3">Every tester screenshot and crash report becomes a labeled GitHub issue — screenshots, crash logs and device forensics included. Then an AI agent root-causes it against your code and opens the fix PR.</p>
+      <h1 class="rise d2">Report bugs.<br>Get fix PRs.<br><em>In under 2 minutes.</em></h1>
+      <p class="sub rise d3">Shake your phone or send TestFlight feedback. We turn it into a labeled GitHub issue with every detail your team needs — then an AI agent finds the line of code and opens the fix PR.</p>
       <div class="cta rise d3">
         <a class="btn btn-primary btn-lg" href="/setup.html">Connect your app <span class="arrow">→</span></a>
         <a class="btn btn-outline btn-lg" href="#how">See how it works</a>
@@ -187,7 +260,12 @@
         <div class="avatars" aria-hidden="true">
           <i style="--av1:#f59e0b;--av2:#ef4444"></i><i style="--av1:#4f6ef7;--av2:#8b5cf6"></i><i style="--av1:#10b981;--av2:#059669"></i><i style="--av1:#ec4899;--av2:#8b5cf6"></i><i style="--av1:#06b6d4;--av2:#4f6ef7"></i>
         </div>
-        <span><b>From shake to fix PR in ~2 minutes</b> — measured on a live production app</span>
+        <span><span class="stars" aria-hidden="true">★★★★★</span><br><b>Loved by beta testers and builders</b> — shake → fix PR in ~2 min, live-measured</span>
+      </div>
+      <div class="trio rise d4">
+        <div><div class="t-i">📱</div><h4>Shake or screenshot</h4><p>Capture the moment something's wrong, right in TestFlight.</p></div>
+        <div><div class="t-i">🔍</div><h4>We add the forensics</h4><p>Device, build, crash log and screenshots attached automatically.</p></div>
+        <div><div class="t-i">✓</div><h4>Triaged in GitHub</h4><p>Root cause, priority label, and a fix PR when we're confident.</p></div>
       </div>
     </div>
 
@@ -205,23 +283,21 @@
                 <div class="row"><span>Utilisation</span><b class="bad">200%</b></div>
                 <div class="util-bar"><i></i></div>
               </div>
-              <div class="widget">
-                <div class="t">Today</div>
-                <div class="row"><span>Inspections</span><b>12</b></div>
-                <div class="row"><span>Completed</span><b>7</b></div>
-              </div>
             </div>
             <div class="tf-sheet">
               <div class="tf-grab" aria-hidden="true"></div>
               <div class="tf-head">
                 <span class="cancel">Cancel</span>
-                <span class="title">Send Beta Feedback</span>
-                <span class="send">Submit</span>
+                <span class="title">Submit Feedback</span>
+                <span style="width:38px"></span>
               </div>
-              <div class="tf-thumb">
-                <div class="shot" aria-hidden="true"></div>
-                <div class="tf-text">The technician capacity doesn’t mean or have any interactions, what is it?<span class="cursor" aria-hidden="true"></span></div>
-              </div>
+              <div class="tf-seg" aria-hidden="true"><span class="on">Shake</span><span>Screenshot</span></div>
+              <div class="tf-label">What happened?</div>
+              <div class="tf-text" style="display:block">The technician capacity doesn’t mean or have any interactions, what is it?<span class="cursor" aria-hidden="true"></span></div>
+              <div class="tf-label">Tags</div>
+              <div class="tf-tags"><span class="tf-tag on">Bug ×</span><span class="tf-tag on">iOS ×</span><span class="tf-tag">+ Add tag</span></div>
+              <div class="tf-submit">Submit Feedback</div>
+              <div class="tf-note">We’ll create an issue in GitHub</div>
             </div>
           </div>
           <div class="home-bar" aria-hidden="true"></div>
@@ -248,7 +324,16 @@
     <div class="stat"><b>5 min</b><span>setup, webhook created for you</span></div>
   </section>
 
-  <section class="features" aria-label="Features">
+  <section class="dest" aria-label="Destinations">
+    <h2>Send feedback anywhere you work</h2>
+    <p class="cap"><b>GitHub is live today.</b> Every destination with a webhook is on the way — same rich issue, your tools.</p>
+    <div class="marquee">
+      <div class="m-track" aria-hidden="true"><span class="chip live"><i style="background:#24292f" aria-hidden="true">GH</i>GitHub <small>live</small></span><span class="chip"><i style="background:#fc6d26" aria-hidden="true">GL</i>GitLab <small>soon</small></span><span class="chip"><i style="background:#611f69" aria-hidden="true">SL</i>Slack <small>soon</small></span><span class="chip"><i style="background:#5865F2" aria-hidden="true">DC</i>Discord <small>soon</small></span><span class="chip"><i style="background:#5E6AD2" aria-hidden="true">LN</i>Linear <small>soon</small></span><span class="chip"><i style="background:#2684FF" aria-hidden="true">JR</i>Jira <small>soon</small></span><span class="chip"><i style="background:#37352f" aria-hidden="true">NT</i>Notion <small>soon</small></span><span class="chip"><i style="background:#229ED9" aria-hidden="true">TG</i>Telegram <small>soon</small></span><span class="chip"><i style="background:#6264A7" aria-hidden="true">MS</i>Teams <small>soon</small></span><span class="chip"><i style="background:#16a34a" aria-hidden="true">WH</i>Any webhook <small>soon</small></span><span class="chip live"><i style="background:#24292f" aria-hidden="true">GH</i>GitHub <small>live</small></span><span class="chip"><i style="background:#fc6d26" aria-hidden="true">GL</i>GitLab <small>soon</small></span><span class="chip"><i style="background:#611f69" aria-hidden="true">SL</i>Slack <small>soon</small></span><span class="chip"><i style="background:#5865F2" aria-hidden="true">DC</i>Discord <small>soon</small></span><span class="chip"><i style="background:#5E6AD2" aria-hidden="true">LN</i>Linear <small>soon</small></span><span class="chip"><i style="background:#2684FF" aria-hidden="true">JR</i>Jira <small>soon</small></span><span class="chip"><i style="background:#37352f" aria-hidden="true">NT</i>Notion <small>soon</small></span><span class="chip"><i style="background:#229ED9" aria-hidden="true">TG</i>Telegram <small>soon</small></span><span class="chip"><i style="background:#6264A7" aria-hidden="true">MS</i>Teams <small>soon</small></span><span class="chip"><i style="background:#16a34a" aria-hidden="true">WH</i>Any webhook <small>soon</small></span></div>
+      <div class="m-track" aria-hidden="true"><span class="chip"><i style="background:#16a34a" aria-hidden="true">WH</i>Any webhook <small>soon</small></span><span class="chip"><i style="background:#6264A7" aria-hidden="true">MS</i>Teams <small>soon</small></span><span class="chip"><i style="background:#229ED9" aria-hidden="true">TG</i>Telegram <small>soon</small></span><span class="chip"><i style="background:#37352f" aria-hidden="true">NT</i>Notion <small>soon</small></span><span class="chip"><i style="background:#2684FF" aria-hidden="true">JR</i>Jira <small>soon</small></span><span class="chip"><i style="background:#5E6AD2" aria-hidden="true">LN</i>Linear <small>soon</small></span><span class="chip"><i style="background:#5865F2" aria-hidden="true">DC</i>Discord <small>soon</small></span><span class="chip"><i style="background:#611f69" aria-hidden="true">SL</i>Slack <small>soon</small></span><span class="chip"><i style="background:#fc6d26" aria-hidden="true">GL</i>GitLab <small>soon</small></span><span class="chip live"><i style="background:#24292f" aria-hidden="true">GH</i>GitHub <small>live</small></span><span class="chip"><i style="background:#16a34a" aria-hidden="true">WH</i>Any webhook <small>soon</small></span><span class="chip"><i style="background:#6264A7" aria-hidden="true">MS</i>Teams <small>soon</small></span><span class="chip"><i style="background:#229ED9" aria-hidden="true">TG</i>Telegram <small>soon</small></span><span class="chip"><i style="background:#37352f" aria-hidden="true">NT</i>Notion <small>soon</small></span><span class="chip"><i style="background:#2684FF" aria-hidden="true">JR</i>Jira <small>soon</small></span><span class="chip"><i style="background:#5E6AD2" aria-hidden="true">LN</i>Linear <small>soon</small></span><span class="chip"><i style="background:#5865F2" aria-hidden="true">DC</i>Discord <small>soon</small></span><span class="chip"><i style="background:#611f69" aria-hidden="true">SL</i>Slack <small>soon</small></span><span class="chip"><i style="background:#fc6d26" aria-hidden="true">GL</i>GitLab <small>soon</small></span><span class="chip live"><i style="background:#24292f" aria-hidden="true">GH</i>GitHub <small>live</small></span></div>
+    </div>
+  </section>
+
+  <section class="features reveal-stagger" aria-label="Features">
     <div class="card card-pad"><span class="badge">Capture</span><h3>Nothing lost in TestFlight</h3><p>Screenshot feedback and crashes land as rich GitHub issues seconds after submission — screenshot embedded, not a link into App Store Connect.</p></div>
     <div class="card card-pad"><span class="badge">Context</span><h3>Full device forensics</h3><p>Device, OS, build, locale, battery, connection, disk, uptime, and the crash log — everything triage actually needs, in the issue.</p></div>
     <div class="card card-pad"><span class="badge">Triage</span><h3>AI that reads your code</h3><p>Root cause with file/line references, severity and priority labels, deduplication — and a fix PR when the diagnosis is confident.</p></div>
@@ -257,44 +342,35 @@
 
   <h2 class="section-title" id="how">From shake to shipped</h2>
   <p class="section-sub">A real trace from a production app — timestamps included.</p>
-  <div class="timeline">
+  <div class="timeline reveal-stagger">
     <div class="tl"><div class="when">T+0s</div><h3>Tester shakes their phone</h3><p>"The technician capacity doesn't mean or have any interactions, what is it?" — screenshot attached, submitted through TestFlight's native sheet.</p></div>
     <div class="tl"><div class="when">T+3s</div><h3>Apple delivers the signed webhook</h3><p>FeedbackLoop verifies the HMAC signature, fetches the full submission — screenshots, device, OS, build, locale, battery, uptime.</p></div>
     <div class="tl"><div class="when">T+14s</div><h3>GitHub issue opens, fully loaded</h3><p>Labeled <code>testflight-feedback</code> + <code>needs-triage</code>, screenshot embedded, device forensics in a tidy table.</p></div>
     <div class="tl"><div class="when">T+2m</div><h3>AI triage lands the verdict</h3><p>Root cause traced to <code>schedule.ts:165</code> — the widget counts tasks, not technicians. Labeled <code>bug · P2</code>, and a fix PR is opened referencing the issue.</p></div>
   </div>
 
-  <h2 class="section-title" id="pricing">Pricing</h2>
-  <p class="section-sub">Start free. Upgrade when you want the AI doing the triage for you.</p>
-  <section class="tiers" aria-label="Pricing tiers">
-    <div class="card card-pad tier">
-      <h3>Capture</h3><div class="price">$0</div><div class="per">forever</div>
-      <ul><li>1 app → 1 repo</li><li>Issues with screenshots + crash logs</li><li>Device forensics on every report</li><li>Community support</li></ul>
-      <a class="btn btn-outline btn-block" href="/setup.html">Start free</a>
-    </div>
+  <h2 class="section-title" id="pricing">Free while in beta</h2>
+  <p class="section-sub">Everything you saw above — capture, AI triage, fix PRs — free for one app while we're in beta.</p>
+  <section class="tiers" aria-label="Pricing" style="grid-template-columns:minmax(280px,460px);justify-content:center">
     <div class="card card-pad tier hot">
-      <span class="flag">Most popular</span>
-      <h3>Triage</h3><div class="price">$29</div><div class="per">per app / month</div>
-      <ul><li>Everything in Capture</li><li>AI root-cause comments + priority labels</li><li>Deduplication across reports</li><li>Delivery log + alerting</li></ul>
-      <a class="btn btn-primary btn-block" href="/setup.html">Get started</a>
-    </div>
-    <div class="card card-pad tier">
-      <h3>Autofix</h3><div class="price">$99</div><div class="per">per app / month</div>
-      <ul><li>Everything in Triage</li><li>Fix PRs for confident diagnoses</li><li>Slack / Linear sinks</li><li>Priority support</li></ul>
-      <a class="btn btn-outline btn-block" href="/setup.html">Get started</a>
+      <span class="flag">Beta</span>
+      <h3>Try it free</h3><div class="price">$0</div><div class="per">1 app → 1 repo, no card required</div>
+      <ul><li>Issues with screenshots + crash logs</li><li>Full device forensics</li><li>AI root-cause triage + priority labels</li><li>Fix PRs for confident diagnoses</li></ul>
+      <a class="btn btn-primary btn-block" href="/setup.html">Connect your app — free</a>
+      <p style="margin-top:14px;font-size:12.5px;color:var(--muted-foreground)">Coming with paid plans: multiple apps, and sending feedback anywhere with a webhook — Discord, Slack, GitLab, Linear, and more.</p>
     </div>
   </section>
 
   <h2 class="section-title" id="faq">Questions</h2>
-  <div class="faq">
-    <details><summary>How does the App Store Connect side work?</summary><p>You upload a team API key (.p8, App Manager role) once. We use it to create the TestFlight webhook for your app via Apple's official API and to fetch full submission details when feedback arrives. Keys are encrypted at rest and never leave the processing path — the same trust model used by CI providers like Bitrise and Codemagic.</p></details>
-    <details><summary>What lands in the GitHub issue?</summary><p>The tester's comment, every screenshot, the crash log (for crashes), and a device table: model, OS, app version and build, locale, timezone, connection type, battery, free disk, and app uptime. Plus labels you configure — defaults are <code>testflight-feedback</code> and <code>needs-triage</code>.</p></details>
-    <details><summary>What exactly does the AI triage do?</summary><p>It reads the issue against your repository: identifies the screen or feature involved, traces the likely root cause with file/line references, posts an analysis comment, sets a type label and a P0–P3 priority, dedupes against existing issues — and on the Autofix plan, opens a branch and PR when the diagnosis is confident.</p></details>
-    <details><summary>Can I self-host it?</summary><p>Yes. The single-tenant core is open source and deploys to Cloudflare Workers, Vercel, or any Node 20+ host — with an agent skill included that walks through the whole setup. The hosted product adds multi-tenancy, encrypted key management, the delivery dashboard, and managed AI triage.</p></details>
-    <details><summary>Is my tester data safe?</summary><p>Webhooks are verified with a per-tenant HMAC secret before anything is processed. Credentials are AES-256-GCM encrypted at rest. Offboarding deletes the Apple webhook and purges stored data.</p></details>
+  <div class="faq reveal">
+    <details><summary>How does the App Store Connect side work?</summary><div class="body"><div><p>You upload a team API key (.p8, App Manager role) once. We use it to create the TestFlight webhook for your app via Apple's official API and to fetch full submission details when feedback arrives. Keys are encrypted at rest and never leave the processing path — the same trust model used by CI providers like Bitrise and Codemagic.</p></div></div></details>
+    <details><summary>What lands in the GitHub issue?</summary><div class="body"><div><p>The tester's comment, every screenshot, the crash log (for crashes), and a device table: model, OS, app version and build, locale, timezone, connection type, battery, free disk, and app uptime. Plus labels you configure — defaults are <code>testflight-feedback</code> and <code>needs-triage</code>.</p></div></div></details>
+    <details><summary>What exactly does the AI triage do?</summary><div class="body"><div><p>It reads the issue against your repository: identifies the screen or feature involved, traces the likely root cause with file/line references, posts an analysis comment, sets a type label and a P0–P3 priority, dedupes against existing issues — and on the Autofix plan, opens a branch and PR when the diagnosis is confident.</p></div></div></details>
+    <details><summary>Can I self-host it?</summary><div class="body"><div><p>Yes. The single-tenant core is open source and deploys to Cloudflare Workers, Vercel, or any Node 20+ host — with an agent skill included that walks through the whole setup. The hosted product adds multi-tenancy, encrypted key management, the delivery dashboard, and managed AI triage.</p></div></div></details>
+    <details><summary>Is my tester data safe?</summary><div class="body"><div><p>Webhooks are verified with a per-tenant HMAC secret before anything is processed. Credentials are AES-256-GCM encrypted at rest. Offboarding deletes the Apple webhook and purges stored data.</p></div></div></details>
   </div>
 
-  <section class="final-cta">
+  <section class="final-cta reveal">
     <h2>Your testers are already telling you what to fix</h2>
     <p>Stop reading it in App Store Connect three days later.</p>
     <a class="btn btn-primary btn-lg" href="/setup.html">Connect your app — free <span class="arrow">→</span></a>
@@ -304,5 +380,11 @@
     Open core — <a href="https://github.com/Vinniai/asc-gh-feedback">github.com/Vinniai/asc-gh-feedback</a> · Webhooks verified with HMAC-SHA256 · Credentials encrypted at rest
   </footer>
 </div>
+<script>
+const io = new IntersectionObserver((es) => es.forEach(e => {
+  if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) }
+}), { rootMargin: '0px 0px -12% 0px', threshold: .1 })
+document.querySelectorAll('.reveal, .reveal-stagger').forEach(el => io.observe(el))
+</script>
 </body>
 </html>

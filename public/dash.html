@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard — FeedbackLoop</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .top { display: flex; align-items: center; gap: 10px; }
+  .top img { width: 30px; height: 30px; border-radius: 999px; }
+  .top .who { font-size: 13.5px; color: var(--muted-foreground); }
+  .top a.out { font-size: 12.5px; color: var(--muted-foreground); }
+  .signin { text-align: center; padding: 100px 0; }
+  .signin h1 { font-size: 30px; letter-spacing: -.02em; margin-bottom: 10px; }
+  .signin p { color: var(--muted-foreground); margin-bottom: 26px; }
+  .apps-grid { display: grid; gap: 16px; margin-top: 24px; }
+  .app-card { padding: 22px 24px; }
+  .app-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .app-head h3 { font-size: 17px; letter-spacing: -.01em; }
+  .app-head .b { font: 12px var(--font-mono); color: var(--muted-foreground); }
+  .pause { font-size: 12.5px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border); background: transparent; color: var(--foreground); cursor: pointer; }
+  .badge-on { background: color-mix(in srgb, var(--success) 14%, transparent); color: var(--success); }
+  .badge-off { background: color-mix(in srgb, var(--destructive) 14%, transparent); color: var(--destructive); }
+  .quick { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .quick a { font-size: 12.5px; color: var(--primary); text-decoration: none; border: 1px solid var(--border); padding: 5px 12px; border-radius: 999px; }
+  .quick a:hover { background: var(--muted); }
+  .cfg { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border); }
+  @media (max-width: 720px) { .cfg { grid-template-columns: 1fr } }
+  .cfg h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted-foreground); margin-bottom: 10px; }
+  .dest-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .dest-row select { flex: 0 0 110px; }
+  .dest-row input { flex: 1; }
+  .dest-row button { flex: 0 0 auto; background: none; border: 1px solid var(--border); color: var(--destructive); border-radius: 8px; width: 34px; cursor: pointer; }
+  .mini { font-size: 12.5px; padding: 8px 10px !important; }
+  .row2 { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 13.5px; }
+  .row2 input[type=checkbox] { width: auto; }
+  .save-row { display: flex; gap: 10px; align-items: center; margin-top: 16px; }
+  .save-msg { font-size: 12.5px; }
+  .deliv-out { font: 11.5px var(--font-mono); color: var(--muted-foreground); margin-top: 10px; white-space: pre-wrap; }
+  .empty { text-align: center; padding: 60px 0; color: var(--muted-foreground); }
+  .claim { display: flex; gap: 8px; margin-top: 30px; max-width: 420px; margin-left: auto; margin-right: auto; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="nav">
+    <a class="brand" href="/">Feedback<span>Loop</span></a>
+    <div class="top" id="top"><span class="who">Dashboard</span></div>
+  </header>
+
+  <div id="signin" class="signin" hidden>
+    <h1>Manage your apps</h1>
+    <p>Sign in to configure feedback pipelines, destinations, and triage for every app you've connected.</p>
+    <a class="btn btn-primary btn-lg" href="/api/auth?action=login">Sign in with GitHub</a>
+  </div>
+
+  <div id="dash" hidden>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      <h1 style="font-size:24px;letter-spacing:-.02em">Your apps</h1>
+      <a class="btn btn-primary" href="/setup.html">+ Connect another app</a>
+    </div>
+    <div class="apps-grid" id="apps"></div>
+    <div class="empty" id="empty" hidden>
+      <p>No apps yet — connect your first one, or claim a tenant you created before signing in.</p>
+      <div class="claim">
+        <input id="claimid" placeholder="tenant id (t…)" style="background:var(--card);color:var(--foreground);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font:13px var(--font-mono);flex:1">
+        <button class="btn btn-outline" id="claimbtn">Claim</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id)
+const api = async (method, url, body) => {
+  const res = await fetch(url, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined })
+  const j = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(j.error || res.status)
+  return j
+}
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
+
+function destRow(d = { type: 'discord', url: '' }) {
+  return `<div class="dest-row">
+    <select class="mini d-type" style="background:var(--card);color:var(--foreground);border:1px solid var(--border);border-radius:8px">
+      ${['discord','slack','webhook'].map(t => `<option ${t===d.type?'selected':''}>${t}</option>`).join('')}
+    </select>
+    <input class="mini d-url" style="background:var(--card);color:var(--foreground);border:1px solid var(--border);border-radius:8px;font-family:var(--font-mono)" placeholder="https://…" value="${esc(d.url)}">
+    <button title="Remove" onclick="this.parentElement.remove()">×</button>
+  </div>`
+}
+
+function card(t) {
+  const el = document.createElement('section')
+  el.className = 'card app-card'
+  el.dataset.id = t.tenantId
+  el.innerHTML = `
+    <div class="app-head">
+      <div><h3>${esc(t.appName)}</h3><div class="b">${esc(t.bundleId)} · ${esc(t.repo)} · <span class="code">${t.tenantId}</span></div></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="pause ${t.enabled ? 'badge-on' : 'badge-off'}" data-role="state">${t.enabled ? 'Active' : 'Paused'}</span>
+        <button class="pause" data-role="toggle">${t.enabled ? 'Pause' : 'Resume'}</button>
+        <button class="pause" data-role="delete" style="color:var(--destructive)">Disconnect</button>
+      </div>
+    </div>
+    <div class="quick">
+      <a href="${t.links.ascFeedback}" target="_blank" rel="noopener">ASC feedback ↗</a>
+      <a href="${t.links.ascCrashes}" target="_blank" rel="noopener">ASC crashes ↗</a>
+      <a href="${t.links.ascApp}" target="_blank" rel="noopener">TestFlight builds ↗</a>
+      <a href="${t.links.issues}" target="_blank" rel="noopener">GitHub issues ↗</a>
+      <a href="#" data-role="deliv">Delivery log</a>
+    </div>
+    <div class="cfg">
+      <div>
+        <h4>Destinations</h4>
+        <div data-role="dests">${(t.destinations || []).map(destRow).join('')}</div>
+        <button class="btn btn-outline mini" data-role="adddest">+ Add destination</button>
+      </div>
+      <div>
+        <h4>Pipeline</h4>
+        <label class="row2"><input type="checkbox" data-role="p-issue" ${t.pipeline.createIssue !== false ? 'checked' : ''}> Create GitHub issue</label>
+        <label class="row2"><input type="checkbox" data-role="p-routine" ${t.pipeline.fireRoutine !== false ? 'checked' : ''}> Fire Claude triage routine ${t.routineConfigured ? '' : '<span style="color:var(--muted-foreground)">(no routine configured)</span>'}</label>
+        <div class="field" style="margin-top:8px"><label>Labels</label><input class="mini" data-role="labels" value="${esc(t.labels)}"></div>
+        <div class="field"><label>Routine ID <span class="desc">optional</span></label><input class="mini" data-role="rid" placeholder="trig_…"></div>
+        <div class="field"><label>Routine token <span class="desc">write-only</span></label><input class="mini" type="password" data-role="rtok" placeholder="${t.routineConfigured ? '••••••• (set)' : 'sk-ant-oat01-…'}"></div>
+      </div>
+    </div>
+    <div class="save-row">
+      <button class="btn btn-primary mini" data-role="save">Save changes</button>
+      <span class="save-msg" data-role="msg"></span>
+    </div>
+    <div class="deliv-out" data-role="delivout"></div>`
+
+  const q = (r) => el.querySelector(`[data-role="${r}"]`)
+  q('adddest').onclick = () => q('dests').insertAdjacentHTML('beforeend', destRow())
+  q('save').onclick = async () => {
+    const destinations = [...q('dests').querySelectorAll('.dest-row')].map(r => ({
+      type: r.querySelector('.d-type').value, url: r.querySelector('.d-url').value.trim()
+    })).filter(d => d.url)
+    const patch = {
+      labels: q('labels').value.trim(),
+      destinations,
+      pipeline: { createIssue: q('p-issue').checked, fireRoutine: q('p-routine').checked }
+    }
+    if (q('rid').value.trim()) patch.routineId = q('rid').value.trim()
+    if (q('rtok').value.trim()) patch.routineToken = q('rtok').value.trim()
+    q('msg').textContent = 'Saving…'
+    try { await api('POST', '/api/tenants', { tenantId: t.tenantId, patch }); q('msg').textContent = '✓ Saved'; q('msg').style.color = 'var(--success)' }
+    catch (e) { q('msg').textContent = e.message; q('msg').style.color = 'var(--destructive)' }
+  }
+  q('toggle').onclick = async () => {
+    const enable = q('toggle').textContent === 'Resume'
+    q('toggle').disabled = true
+    try {
+      await api('POST', '/api/tenants', { tenantId: t.tenantId, patch: { enabled: enable } })
+      q('state').textContent = enable ? 'Active' : 'Paused'
+      q('state').className = `pause ${enable ? 'badge-on' : 'badge-off'}`
+      q('toggle').textContent = enable ? 'Pause' : 'Resume'
+    } catch (e) { alert(e.message) }
+    q('toggle').disabled = false
+  }
+  q('delete').onclick = async () => {
+    if (!confirm(`Disconnect ${t.appName}? The Apple webhook will be deleted. Issues already created stay.`)) return
+    try { await api('DELETE', '/api/tenants', { tenantId: t.tenantId }); el.remove() } catch (e) { alert(e.message) }
+  }
+  q('deliv').onclick = async (ev) => {
+    ev.preventDefault()
+    q('delivout').textContent = 'loading…'
+    try {
+      const r = await api('GET', `/api/tenants?deliveries=${t.tenantId}`)
+      q('delivout').textContent = r.deliveries.length
+        ? r.deliveries.map(d => `${d.createdDate}  ${d.deliveryState}  HTTP ${d.response?.httpStatusCode ?? '—'}`).join('\n')
+        : 'No deliveries in the last hour.'
+    } catch (e) { q('delivout').textContent = e.message }
+  }
+  return el
+}
+
+async function load() {
+  try {
+    const me = await api('GET', '/api/auth?action=me')
+    $('top').innerHTML = `<img src="${esc(me.user.avatar)}" alt=""><span class="who">${esc(me.user.login)}</span><a class="out" href="/api/auth?action=logout">Sign out</a>`
+    $('dash').hidden = false
+    const { tenants } = await api('GET', '/api/tenants')
+    if (!tenants.length) { $('empty').hidden = false }
+    tenants.forEach(t => $('apps').appendChild(card(t)))
+    $('claimbtn').onclick = async () => {
+      try { await api('POST', '/api/tenants', { action: 'claim', tenantId: $('claimid').value.trim() }); location.reload() }
+      catch (e) { alert(e.message) }
+    }
+  } catch {
+    $('signin').hidden = false
+  }
+}
+load()
+</script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 import { ascJwt, listApps, createWebhook, pingWebhook, recentDeliveries } from '../src/saas/asc-admin.js'
-import { getTenant, putTenant } from '../src/saas/store.js'
+import { getTenant, putTenant, getOwnerTenants, setOwnerTenants } from '../src/saas/store.js'
+import { readSession } from '../src/saas/session.js'
 
 const json = (status, obj) =>
   new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } })
@@ -52,7 +53,9 @@ export async function POST(request) {
       const webhookUrl = `${origin}/t/${tenantId}/webhook`
       const webhookId = await createWebhook(jwt, { appId: app.id, url: webhookUrl, secret, name: `asc-gh-feedback ${tenantId}` })
 
+      const sessionUser = await readSession(env, request)
       await putTenant(env, tenantId, {
+        owner: sessionUser?.login || null,
         createdAt: new Date().toISOString(),
         repo,
         githubToken: body.githubToken,
@@ -69,6 +72,11 @@ export async function POST(request) {
         routineId: body.routineId || '',
         routineToken: body.routineToken || ''
       })
+
+      if (sessionUser?.login) {
+        const ids = await getOwnerTenants(env, sessionUser.login)
+        if (!ids.includes(tenantId)) await setOwnerTenants(env, sessionUser.login, [...ids, tenantId])
+      }
 
       await pingWebhook(jwt, webhookId)
       return json(200, { ok: true, tenantId, webhookUrl, webhookId, app })
