@@ -1,12 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "api/webhook.js": {
-      "maxDuration": 60
-    }
+    "api/webhook.js": { "maxDuration": 60 },
+    "api/tenant-webhook.js": { "maxDuration": 60 },
+    "api/setup.js": { "maxDuration": 60 }
   },
   "rewrites": [
     { "source": "/webhook", "destination": "/api/webhook" },
-    { "source": "/healthz", "destination": "/api/webhook" }
+    { "source": "/healthz", "destination": "/api/webhook" },
+    { "source": "/t/:tenant/webhook", "destination": "/api/tenant-webhook?tenant=:tenant" }
   ]
 }

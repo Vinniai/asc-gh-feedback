@@ -77,6 +77,10 @@ export async function handleRequest(request, env, ctx = {}) {
     return json(500, { error: 'server misconfigured' })
   }
 
+  return webhookResponse(request, cfg, ctx)
+}
+
+export async function webhookResponse(request, cfg, ctx = {}) {
   const bodyBytes = new Uint8Array(await request.arrayBuffer())
   if (bodyBytes.length > 5_000_000) return json(413, { error: 'payload too large' })
 

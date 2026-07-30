@@ -3,3 +3,5 @@ node_modules/
 *.p8
 .vercel
 .webhook-secret.local
+.setup-code.local
+.tenant-key.local
