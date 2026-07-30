@@ -2,6 +2,17 @@
 
 TestFlight feedback → GitHub issues → Claude routine triage. One Web-standard core, deployable to Cloudflare Workers, Vercel, or any Node 20+ host.
 
+> ## 🤖 Agents: implement this end-to-end
+>
+> If you are an AI agent asked to set this up, this repo carries its own deployment skill — follow it instead of improvising:
+>
+> 1. **Clone and load the skill**: `git clone <this repo> && cd asc-gh-feedback` — the skill is at [.claude/skills/deploy-asc-feedback/SKILL.md](.claude/skills/deploy-asc-feedback/SKILL.md) (Claude Code picks it up as `/deploy-asc-feedback`; other agents: read the file and follow it verbatim).
+> 2. **Ask before assuming**: every target is an input — the GitHub repo for issues, the App Store Connect app, the deployment platform, whether Claude-routine triage is wanted. Verify each answer (`gh repo view`, ASC app list) before acting.
+> 3. **Audit, then gather**: check which env vars already exist (`vercel env ls` / `wrangler secret list`); collect only what's missing. Look for credentials on disk first (`~/.appstoreconnect/private_keys/`, `~/Downloads/AuthKey_*.p8`); use browser/computer use with the operator present for the rest — the operator does all logins and approves every key/token generation. Never type passwords; secrets go only into the platform secret store.
+> 4. **Verify before declaring done**: JWT smoke test against the ASC API, deploy + `/healthz`, create the webhook, send a `webhookPings` test and confirm `deliveryState: SUCCEEDED`, then a real submission → labeled issue with screenshots.
+>
+> The skill file contains the exact commands, the safety rules, and the ASC API quirks (wrong `include` params, `_CREATED` event-type suffixes) that will otherwise cost you an hour of 400s.
+
 ## How it works
 
 ```mermaid
