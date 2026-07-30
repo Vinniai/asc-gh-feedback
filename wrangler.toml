@@ -1,0 +1,13 @@
+name = "asc-gh-feedback"
+main = "src/worker.js"
+compatibility_date = "2026-07-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Non-secret vars — set for your setup. Secrets go via `wrangler secret put`
+# (ASC_WEBHOOK_SECRET, ASC_KEY_ID, ASC_ISSUER_ID, ASC_PRIVATE_KEY_B64,
+#  GITHUB_TOKEN, CLAUDE_ROUTINE_TOKEN).
+[vars]
+GITHUB_REPO = "OWNER/REPO"
+GITHUB_ASSET_DIR = ".testflight/feedback"
+GITHUB_LABELS = "testflight-feedback,needs-triage"
+CLAUDE_ROUTINE_ID = "trig_XXXXXXXXXXXXXXXXXXXXXXXXXX"

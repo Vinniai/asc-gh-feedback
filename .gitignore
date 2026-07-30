@@ -1,0 +1,5 @@
+node_modules/
+.env
+*.p8
+.vercel
+.webhook-secret.local
