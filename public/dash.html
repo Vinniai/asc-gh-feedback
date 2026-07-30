@@ -46,6 +46,22 @@
   .cat-t b { font-size: 13.5px; }
   .cat-t span { font-size: 11.5px; color: var(--muted-foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .row2 .switch { margin-right: 4px; }
+  .cat-sub { padding: 8px 0 12px 39px; }
+  .cat-hint { font-size: 11px; color: var(--muted-foreground); margin-top: 6px; }
+  .guide { margin-top: 14px; font-size: 13px; color: var(--muted-foreground); }
+  .guide summary { cursor: pointer; font-weight: 600; color: var(--foreground); }
+  .guide ol { margin: 10px 0 0 18px; padding: 0; }
+  .guide li { margin: 6px 0; }
+  .guide a { color: var(--primary); }
+  .prompt-t { width: 100%; margin-top: 10px; background: var(--background); color: var(--muted-foreground); border: 1px solid var(--input); border-radius: 8px; padding: 10px; font: 11.5px/1.6 var(--font-mono); resize: vertical; }
+  @media (max-width: 640px) {
+    .container { padding: 0 14px; }
+    .app-card { padding: 16px; }
+    .app-head { flex-direction: column; align-items: flex-start; }
+    .quick { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+    .quick a { flex: 0 0 auto; }
+    .cat-sub { padding-left: 0; }
+  }
 </style>
 </head>
 <body>
@@ -105,7 +121,8 @@ function card(t) {
       <a href="${t.links.ascCrashes}" target="_blank" rel="noopener">ASC crashes ↗</a>
       <a href="${t.links.ascApp}" target="_blank" rel="noopener">TestFlight builds ↗</a>
       <a href="${t.links.issues}" target="_blank" rel="noopener">GitHub issues ↗</a>
-      <a href="#" data-role="deliv">Delivery log</a>
+      <a href="#" data-role="activity">Activity</a>
+      <a href="#" data-role="deliv">Apple delivery log</a>
     </div>
     <div class="cfg">
       <div>
@@ -117,7 +134,21 @@ function card(t) {
             <span class="badge badge-success-light">live</span>
             <input type="checkbox" class="switch" checked disabled title="GitHub is the primary destination">
           </div>
-          ${[['GL','#fc6d26','GitLab'],['SL','#611f69','Slack'],['DC','#5865F2','Discord'],['LN','#5E6AD2','Linear'],['JR','#2684FF','Jira'],['NT','#37352f','Notion'],['TG','#229ED9','Telegram'],['WH','#16a34a','Any webhook']].map(([m,c,n]) => `
+          ${[['DC','#5865F2','Discord','discord','Discord → Server Settings → Integrations → Webhooks → New Webhook → Copy URL'],['SL','#611f69','Slack','slack','Slack → api.slack.com/apps → Incoming Webhooks → Add to workspace → Copy URL'],['WH','#16a34a','Any webhook','webhook','Any HTTPS endpoint — we POST a JSON event per feedback']].map(([m,c,n,type,hint]) => {
+            const existing = (t.destinations || []).find(d => d.type === type)
+            return `
+          <div class="cat-sel" data-dtype="${type}">
+            <div class="cat-row">
+              <i class="cat-i" style="background:${c}">${m}</i>
+              <div class="cat-t"><b>${n}</b><span>${existing ? esc(existing.url) : 'same event, delivered there'}</span></div>
+              <input type="checkbox" class="switch d-on" ${existing ? 'checked' : ''}>
+            </div>
+            <div class="cat-sub" ${existing ? '' : 'hidden'}>
+              <input class="mini d-url" placeholder="https://…" value="${esc(existing?.url || '')}" style="background:var(--background);color:var(--foreground);border:1px solid var(--input);border-radius:8px;font-family:var(--font-mono);width:100%">
+              <div class="cat-hint">${hint}</div>
+            </div>
+          </div>`}).join('')}
+          ${[['GL','#fc6d26','GitLab'],['LN','#5E6AD2','Linear'],['JR','#2684FF','Jira'],['NT','#37352f','Notion'],['TG','#229ED9','Telegram'],['MS','#6264A7','Teams']].map(([m,c,n]) => `
           <div class="cat-row soon">
             <i class="cat-i" style="background:${c}">${m}</i>
             <div class="cat-t"><b>${n}</b><span>same issue, delivered there</span></div>
@@ -133,6 +164,21 @@ function card(t) {
         <div class="field" style="margin-top:8px"><label>Labels</label><input class="mini" data-role="labels" value="${esc(t.labels)}"></div>
         <div class="field"><label>Routine ID <span class="desc">optional</span></label><input class="mini" data-role="rid" placeholder="trig_…"></div>
         <div class="field"><label>Routine token <span class="desc">write-only</span></label><input class="mini" type="password" data-role="rtok" placeholder="${t.routineConfigured ? '••••••• (set)' : 'sk-ant-oat01-…'}"></div>
+        <details class="guide">
+          <summary>How to set up your Claude triage routine</summary>
+          <ol>
+            <li>Open <a href="https://claude.ai/code/routines" target="_blank" rel="noopener">claude.ai/code/routines ↗</a> → New routine</li>
+            <li>Connect it to <b>${esc(t.repo)}</b> as the repository</li>
+            <li>Paste this prompt: <button class="btn btn-outline mini" data-role="copyprompt" style="margin-left:6px">Copy prompt</button></li>
+            <li>Add trigger → <b>API</b> → Generate token (shown once!)</li>
+            <li>Paste the routine id (trig_…) and token above, then Save</li>
+          </ol>
+          <textarea class="prompt-t" data-role="prompttext" readonly rows="5">You are the TestFlight feedback triage agent for this repo. A webhook files each TestFlight feedback/crash as a GitHub issue labeled testflight-feedback + needs-triage, with screenshots, device metadata, and crash logs embedded. The fire payload may include a specific issue URL — start there; otherwise list open issues labeled needs-triage + testflight-feedback.
+
+CLAIM-FIRST: before analyzing an issue, re-read its labels; if needs-triage is gone another run owns it — skip silently. Claim by swapping needs-triage → triaged.
+
+For each claimed issue: 1) read comment, screenshots, crash log; find the screen/feature involved. 2) investigate the code for root cause (crashes: read the stack). 3) comment your analysis with file/line refs, severity, suggested fix. 4) label type (bug/crash/ui/enhancement/question) + priority P0-P3. 5) small confident fix → branch + PR referencing the issue. 6) dedupe: link + close duplicates. Never close a feedback issue without a fix PR or duplicate link.</textarea>
+        </details>
       </div>
     </div>
     <div class="save-row">
@@ -142,9 +188,17 @@ function card(t) {
     <div class="deliv-out" data-role="delivout"></div>`
 
   const q = (r) => el.querySelector(`[data-role="${r}"]`)
+  el.querySelectorAll('.cat-sel').forEach(row => {
+    const sw = row.querySelector('.d-on'), sub = row.querySelector('.cat-sub')
+    sw.onchange = () => { sub.hidden = !sw.checked; if (sw.checked) row.querySelector('.d-url').focus() }
+  })
   q('save').onclick = async () => {
+    const destinations = [...el.querySelectorAll('.cat-sel')]
+      .filter(r => r.querySelector('.d-on').checked && r.querySelector('.d-url').value.trim())
+      .map(r => ({ type: r.dataset.dtype, url: r.querySelector('.d-url').value.trim() }))
     const patch = {
       labels: q('labels').value.trim(),
+      destinations,
       pipeline: { createIssue: q('p-issue').checked, fireRoutine: q('p-routine').checked }
     }
     if (q('rid').value.trim()) patch.routineId = q('rid').value.trim()
@@ -167,6 +221,25 @@ function card(t) {
   q('delete').onclick = async () => {
     if (!confirm(`Disconnect ${t.appName}? The Apple webhook will be deleted. Issues already created stay.`)) return
     try { await api('DELETE', '/api/tenants', { tenantId: t.tenantId }); el.remove() } catch (e) { alert(e.message) }
+  }
+  q('copyprompt')?.addEventListener('click', (ev) => {
+    ev.preventDefault()
+    navigator.clipboard.writeText(q('prompttext').value)
+    ev.target.textContent = '✓ Copied'
+    setTimeout(() => { ev.target.textContent = 'Copy prompt' }, 1500)
+  })
+  q('activity').onclick = async (ev) => {
+    ev.preventDefault()
+    q('delivout').textContent = 'loading activity…'
+    try {
+      const r = await api('GET', `/api/tenants?logs=${t.tenantId}`)
+      q('delivout').textContent = r.log.length
+        ? r.log.map(e => {
+            const extra = e.issueUrl || e.sessionUrl || e.error || e.type_ || (e.type === 'destination_sent' ? e.type : '') || ''
+            return `${e.t.slice(0, 19).replace('T', ' ')}  ${e.type}${e.by ? '  by ' + e.by : ''}${e.issueUrl ? '  ' + e.issueUrl : ''}${e.error ? '  ' + e.error : ''}${e.eventType ? '  ' + e.eventType : ''}`
+          }).join('\n')
+        : 'No activity recorded yet.'
+    } catch (e) { q('delivout').textContent = e.message }
   }
   q('deliv').onclick = async (ev) => {
     ev.preventDefault()

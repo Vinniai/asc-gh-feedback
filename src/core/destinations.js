@@ -27,7 +27,7 @@ export async function sendDestinations(cfg, fb, issueUrl) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     })
-    if (!res.ok) console.error(`destination ${d.type} ${res.status}`)
-    else console.log(`destination ${d.type} delivered`)
+    if (!res.ok) { console.error(`destination ${d.type} ${res.status}`); cfg.audit?.('destination_failed', { dest: d.type, status: res.status }) }
+    else { console.log(`destination ${d.type} delivered`); cfg.audit?.('destination_sent', { dest: d.type }) }
   }))
 }

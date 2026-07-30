@@ -1,5 +1,5 @@
 import { readSession } from '../src/saas/session.js'
-import { getTenant, putTenant, getOwnerTenants, setOwnerTenants } from '../src/saas/store.js'
+import { getTenant, putTenant, getOwnerTenants, setOwnerTenants, getLog, appendLog } from '../src/saas/store.js'
 import { ascJwt, ascApi, recentDeliveries } from '../src/saas/asc-admin.js'
 
 const json = (status, obj) =>
@@ -45,6 +45,14 @@ export async function GET(request) {
   if (error) return error
   const url = new URL(request.url)
   const deliveriesFor = url.searchParams.get('deliveries')
+  const logsFor = url.searchParams.get('logs')
+
+  if (logsFor) {
+    const { error: e } = await ownedTenant(user, logsFor)
+    if (e) return e
+    const log = await getLog(process.env, logsFor)
+    return json(200, { log: log.slice(-60).reverse() })
+  }
 
   if (deliveriesFor) {
     const { t, error: e } = await ownedTenant(user, deliveriesFor)
@@ -81,6 +89,7 @@ export async function POST(request) {
 
   const { t, error: e } = await ownedTenant(user, body.tenantId)
   if (e) return e
+  const evt = (type, data = {}) => appendLog(process.env, body.tenantId, [{ t: new Date().toISOString(), type, by: user.login, ...data }]).catch(() => {})
 
   const patch = body.patch || {}
   if (typeof patch.labels === 'string') t.labels = patch.labels
@@ -100,9 +109,11 @@ export async function POST(request) {
       data: { type: 'webhooks', id: t.webhookId, attributes: { enabled: patch.enabled } }
     })
     t.enabled = patch.enabled
+    evt(patch.enabled ? 'resumed' : 'paused')
   }
 
   await putTenant(process.env, body.tenantId, t)
+  if (patch.labels !== undefined || patch.destinations || patch.pipeline || patch.routineId !== undefined) evt('config_saved')
   return json(200, { ok: true, tenant: summarize(body.tenantId, t) })
 }
 

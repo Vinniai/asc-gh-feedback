@@ -45,6 +45,7 @@
   <section class="card card-pad" id="step1">
     <h2 class="panel-title">Connect GitHub &amp; App Store Connect</h2>
     <p class="panel-hint">Credentials are sent once over HTTPS, encrypted at rest, and used only for this app's feedback flow. Nothing is stored until you confirm on the next step.</p>
+    <div class="alert alert-success" id="prefillnote" style="margin-top:12px"></div>
 
     <div class="field">
       <label for="code">Invite code</label>
@@ -56,7 +57,8 @@
     </div>
     <div class="field">
       <label for="repo">Repository for issues</label>
-      <input id="repo" autocomplete="off" placeholder="owner/repo">
+      <input id="repo" autocomplete="off" placeholder="owner/repo" list="repolist">
+      <datalist id="repolist"></datalist>
     </div>
     <div class="grid-2">
       <div class="field"><label for="keyid">ASC Key ID</label><input id="keyid" autocomplete="off" placeholder="ABC123DEFG"></div>
@@ -156,7 +158,8 @@ const creds = () => ({
   repo: $('repo').value.trim(),
   ascKeyId: $('keyid').value.trim(),
   ascIssuerId: $('issuer').value.trim(),
-  ascPrivateKey: $('p8').value.trim()
+  ascPrivateKey: $('p8').value.trim(),
+  useExisting: Boolean(state.useExisting)
 })
 
 function alertMsg(el, kind, text) {
@@ -257,6 +260,37 @@ function wtRefresh() {
 ;['code','ghtoken','repo','keyid','issuer','p8'].forEach(id => $(id).addEventListener('input', wtRefresh))
 document.addEventListener('click', () => setTimeout(wtRefresh, 50))
 wtRefresh()
+
+async function prefill() {
+  try {
+    const r = await api({ action: 'prefill' })
+    state.prefill = r
+    const note = []
+    if (r.hasGhToken) {
+      $('ghtoken').placeholder = 'using your GitHub sign-in (override with a PAT if you prefer)'
+      note.push('GitHub connected as ' + r.login)
+    }
+    if (r.repos?.length) {
+      $('repolist').innerHTML = r.repos.map(x => `<option value="${x}">`).join('')
+      $('repo').placeholder = 'pick from your repositories…'
+    }
+    if (r.hasCreds) {
+      ;['keyid', 'issuer', 'p8'].forEach(id => { $(id).disabled = true; $(id).placeholder = 'using your saved App Store Connect key' })
+      note.push('App Store Connect key on file — no need to re-enter it')
+      state.useExisting = true
+    }
+    $('code').placeholder = 'not needed — you are signed in'
+    if (note.length) { const n = $('prefillnote'); n.classList.add('show'); n.textContent = '✓ ' + note.join(' · ') }
+    wtRefreshSigned()
+  } catch {}
+}
+function wtRefreshSigned() {
+  if (!state.prefill) return
+  if (state.prefill.hasGhToken) { const el = wt('code'); el.dataset.state = 'completed'; el.querySelector('.vs-ind').textContent = '✓' }
+  if (state.useExisting) { const el = wt('asc'); el.dataset.state = 'completed'; el.querySelector('.vs-ind').textContent = '✓' }
+}
+prefill()
+
 if (matchMedia('(max-width: 900px)').matches) { const l = document.getElementById('layout'); l.style.gridTemplateColumns = '1fr'; document.getElementById('walkthrough').style.position = 'static'; l.prepend(document.getElementById('walkthrough')) }
 </script>
 </body>

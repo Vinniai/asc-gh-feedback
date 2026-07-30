@@ -1,5 +1,5 @@
 import { webhookResponse } from '../src/core/handler.js'
-import { getTenant } from '../src/saas/store.js'
+import { getTenant, appendLog } from '../src/saas/store.js'
 
 const json = (status, obj) =>
   new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } })
@@ -45,7 +45,14 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  const url = new URL(request.url)
+  const id = url.searchParams.get('tenant') || url.pathname.match(/\/t\/([a-z0-9-]+)\/webhook/)?.[1]
   const { tenant, error } = await resolveTenant(request)
   if (error) return error
-  return webhookResponse(request, tenantCfg(tenant))
+  const events = []
+  const cfg = tenantCfg(tenant)
+  cfg.audit = (type, data = {}) => events.push({ t: new Date().toISOString(), type, ...data })
+  const res = await webhookResponse(request, cfg)
+  if (events.length) await appendLog(process.env, id, events).catch(e => console.error(`log append: ${e.message}`))
+  return res
 }

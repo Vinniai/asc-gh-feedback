@@ -32,9 +32,12 @@ async function processEvent(cfg, event) {
     return
   }
 
+  cfg.audit?.('feedback_received', { eventType: event.type, submissionId: event.instanceId })
+
   const existing = await alreadyFiled(cfg, event.instanceId)
   if (existing) {
     console.log(`submission ${event.instanceId} already filed: ${existing}`)
+    cfg.audit?.('duplicate_skipped', { issueUrl: existing })
     return
   }
 
@@ -54,13 +57,16 @@ async function processEvent(cfg, event) {
   if (cfg.pipeline?.createIssue !== false) {
     issueUrl = await createIssue(cfg, fb, screenshotLinks)
     console.log(`issue created: ${issueUrl}`)
+    cfg.audit?.('issue_created', { issueUrl, screenshots: screenshotLinks.length })
   }
 
   if (cfg.pipeline?.fireRoutine !== false) {
     try {
-      await fireRoutine(cfg, fb, issueUrl)
+      const sessionUrl = await fireRoutine(cfg, fb, issueUrl)
+      if (sessionUrl) cfg.audit?.('routine_fired', { sessionUrl })
     } catch (e) {
       console.error(`routine fire failed (issue still created): ${e.message}`)
+      cfg.audit?.('routine_failed', { error: e.message.slice(0, 200) })
     }
   }
 
@@ -112,7 +118,7 @@ export async function webhookResponse(request, cfg, ctx = {}) {
   if (!event) return json(200, { received: true })
   console.log(`event: ${event.type} instance=${event.instanceId}`)
 
-  const work = processEvent(cfg, event).catch(e => console.error(`processing failed: ${e.message}`))
+  const work = processEvent(cfg, event).catch(e => { console.error(`processing failed: ${e.message}`); cfg.audit?.('error', { error: e.message.slice(0, 200) }) })
   if (typeof ctx.waitUntil === 'function') {
     ctx.waitUntil(work)
   } else {

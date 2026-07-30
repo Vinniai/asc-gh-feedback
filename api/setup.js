@@ -29,20 +29,59 @@ export async function POST(request) {
   let body
   try { body = await request.json() } catch { return json(400, { error: 'invalid json' }) }
 
-  if (!env.SETUP_CODE || body.code !== env.SETUP_CODE) return json(401, { error: 'invalid setup code' })
+  const session = await readSession(env, request)
+  if (!session && (!env.SETUP_CODE || body.code !== env.SETUP_CODE)) return json(401, { error: 'invalid setup code' })
 
   try {
+    if (body.action === 'prefill') {
+      if (!session) return json(401, { error: 'sign in first' })
+      let repos = []
+      if (session.ghToken) {
+        const r = await fetch('https://api.github.com/user/repos?per_page=100&sort=pushed', {
+          headers: { Authorization: `Bearer ${session.ghToken}`, Accept: 'application/vnd.github+json', 'User-Agent': 'feedbackloop' }
+        })
+        if (r.ok) repos = (await r.json()).filter(x => x.permissions?.push).map(x => x.full_name)
+      }
+      let apps = null, hasCreds = false
+      const ids = await getOwnerTenants(env, session.login)
+      for (const id of ids) {
+        const t = await getTenant(env, id)
+        if (t && !t.deleted) {
+          hasCreds = true
+          try { apps = await listApps(await ascJwt(t.ascKeyId, t.ascIssuerId, t.ascPrivateKey)) } catch {}
+          break
+        }
+      }
+      return json(200, { login: session.login, repos, apps, hasCreds, hasGhToken: Boolean(session.ghToken) })
+    }
+
+    const resolveCreds = async () => {
+      const githubToken = body.githubToken || session?.ghToken
+      if (!githubToken) throw new Error('No GitHub token — provide one or sign in')
+      if (body.useExisting && session) {
+        const ids = await getOwnerTenants(env, session.login)
+        for (const id of ids) {
+          const t = await getTenant(env, id)
+          if (t && !t.deleted) return { githubToken, ascKeyId: t.ascKeyId, ascIssuerId: t.ascIssuerId, p8: t.ascPrivateKey }
+        }
+        throw new Error('No existing app to copy App Store Connect credentials from')
+      }
+      return { githubToken, ascKeyId: body.ascKeyId, ascIssuerId: body.ascIssuerId, p8: normalizeP8(body.ascPrivateKey) }
+    }
+
     if (body.action === 'validate') {
-      const repo = await checkRepo(body.githubToken, body.repo)
-      const jwt = await ascJwt(body.ascKeyId, body.ascIssuerId, normalizeP8(body.ascPrivateKey))
+      const creds = await resolveCreds()
+      const repo = await checkRepo(creds.githubToken, body.repo)
+      const jwt = await ascJwt(creds.ascKeyId, creds.ascIssuerId, creds.p8)
       const apps = await listApps(jwt)
       return json(200, { ok: true, repo, apps })
     }
 
     if (body.action === 'provision') {
-      const repo = await checkRepo(body.githubToken, body.repo)
-      const p8 = normalizeP8(body.ascPrivateKey)
-      const jwt = await ascJwt(body.ascKeyId, body.ascIssuerId, p8)
+      const creds = await resolveCreds()
+      const repo = await checkRepo(creds.githubToken, body.repo)
+      const p8 = creds.p8
+      const jwt = await ascJwt(creds.ascKeyId, creds.ascIssuerId, p8)
       const apps = await listApps(jwt)
       const app = apps.find(a => a.id === body.appId)
       if (!app) throw new Error(`App ${body.appId} not visible to this ASC key`)
@@ -53,14 +92,14 @@ export async function POST(request) {
       const webhookUrl = `${origin}/t/${tenantId}/webhook`
       const webhookId = await createWebhook(jwt, { appId: app.id, url: webhookUrl, secret, name: `asc-gh-feedback ${tenantId}` })
 
-      const sessionUser = await readSession(env, request)
+      const sessionUser = session
       await putTenant(env, tenantId, {
         owner: sessionUser?.login || null,
         createdAt: new Date().toISOString(),
         repo,
-        githubToken: body.githubToken,
-        ascKeyId: body.ascKeyId,
-        ascIssuerId: body.ascIssuerId,
+        githubToken: creds.githubToken,
+        ascKeyId: creds.ascKeyId,
+        ascIssuerId: creds.ascIssuerId,
         ascPrivateKey: p8,
         appId: app.id,
         appName: app.name,

@@ -70,3 +70,22 @@ export async function putTenant(env, id, tenant) {
     ...(existing ? { sha: existing.sha } : {})
   })
 }
+
+export async function getLog(env, id) {
+  const file = await gh(env, 'GET', `/repos/${env.TENANT_STORE_REPO}/contents/logs/${id}.jsonl`)
+  if (!file) return []
+  return atob(file.content.replace(/\n/g, '')).split('\n').filter(Boolean).map(l => { try { return JSON.parse(l) } catch { return null } }).filter(Boolean)
+}
+
+export async function appendLog(env, id, entries) {
+  if (!entries.length) return
+  const path = `/repos/${env.TENANT_STORE_REPO}/contents/logs/${id}.jsonl`
+  const file = await gh(env, 'GET', path)
+  const prev = file ? atob(file.content.replace(/\n/g, '')).split('\n').filter(Boolean) : []
+  const lines = [...prev, ...entries.map(e => JSON.stringify(e))].slice(-200)
+  await gh(env, 'PUT', path, {
+    message: `log ${id}`,
+    content: btoa(lines.join('\n') + '\n'),
+    ...(file ? { sha: file.sha } : {})
+  })
+}

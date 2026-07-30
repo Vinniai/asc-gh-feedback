@@ -16,7 +16,7 @@ export async function GET(request) {
     const auth = new URL('https://github.com/login/oauth/authorize')
     auth.searchParams.set('client_id', env.GH_OAUTH_CLIENT_ID)
     auth.searchParams.set('redirect_uri', `${origin}/api/auth?action=callback`)
-    auth.searchParams.set('scope', 'read:user')
+    auth.searchParams.set('scope', 'read:user repo')
     auth.searchParams.set('state', state)
     return redirect(auth.toString(), { 'Set-Cookie': `fl_state=${state}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600` })
   }
@@ -41,7 +41,7 @@ export async function GET(request) {
     const u = await userRes.json()
     if (!u.login) return json(401, { error: 'could not read GitHub user' })
 
-    const sess = await makeSession(env, { login: u.login, avatar: u.avatar_url, name: u.name || u.login })
+    const sess = await makeSession(env, { login: u.login, avatar: u.avatar_url, name: u.name || u.login, ghToken: tok.access_token })
     return redirect('/dash.html', { 'Set-Cookie': sessionCookie(sess) })
   }
 
