@@ -136,6 +136,11 @@
   .wiz-app { justify-content: space-between; }
   .wiz-app .wiz-tick { color: var(--primary); opacity: 0; transform: scale(.8); transition: opacity 150ms var(--ease-out), transform 150ms var(--ease-out); }
   .wiz-app.sel .wiz-tick { opacity: 1; transform: none; }
+  .dropzone { margin-top: 14px; border: 1.5px dashed var(--border); border-radius: var(--radius); padding: 22px 16px; text-align: center; cursor: pointer; transition: border-color 150ms var(--ease-out), background 150ms var(--ease-out); }
+  .dropzone:hover, .dropzone.hover { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 6%, transparent); }
+  .dropzone.ok { border-color: color-mix(in srgb, var(--success) 60%, transparent); border-style: solid; }
+  .dz-inner b { display: block; font-size: 13.5px; }
+  .dz-inner span { font-size: 12px; color: var(--muted-foreground); }
 </style>
 </head>
 <body>
@@ -478,10 +483,34 @@ function wizRender() {
       wiz.data.useExisting = true
     } else {
       b.innerHTML = `<h3>App Store Connect key</h3>
-        <p class="hint">Users and Access → Integrations → Team Keys (role: App Manager). <a href="https://appstoreconnect.apple.com/access/integrations/api" target="_blank" rel="noopener" style="color:var(--primary)">Open ASC ↗</a></p>
-        <div class="grid-2"><div class="field"><label>Key ID</label><input id="wkeyid" value="${esc(wiz.data.ascKeyId || '')}"></div>
-        <div class="field"><label>Issuer ID</label><input id="wissuer" value="${esc(wiz.data.ascIssuerId || '')}"></div></div>
-        <div class="field"><label>Private key (.p8 contents)</label><textarea id="wp8" rows="4">${esc(wiz.data.ascPrivateKey || '')}</textarea></div>`
+        <p class="hint">Never made one? <a href="https://appstoreconnect.apple.com/access/integrations/api" target="_blank" rel="noopener" style="color:var(--primary)">Open App Store Connect ↗</a> → Integrations → Team Keys → Generate API Key (role: App Manager) → Download. You get an <b>AuthKey_XXXX.p8</b> file — drop it below.</p>
+        <div class="dropzone" id="wdrop">
+          <input type="file" id="wfile" accept=".p8,.pem,.txt" hidden>
+          <div class="dz-inner" id="wdroplabel"><b>Drop your AuthKey_….p8 here</b><span>or click to browse — it's read on your device</span></div>
+        </div>
+        <div class="grid-2"><div class="field"><label>Key ID <span class="desc">auto-filled from the file</span></label><input id="wkeyid" value="${esc(wiz.data.ascKeyId || '')}"></div>
+        <div class="field"><label>Issuer ID <span class="desc">top of the Integrations page</span></label><input id="wissuer" value="${esc(wiz.data.ascIssuerId || '')}"></div></div>
+        <details class="guide" style="margin-top:4px"><summary>Paste the key instead</summary>
+          <div class="field"><label>Private key (.p8 contents)</label><textarea id="wp8" rows="4">${esc(wiz.data.ascPrivateKey || '')}</textarea></div>
+        </details>`
+      const drop = b.querySelector('#wdrop'), file = b.querySelector('#wfile')
+      const takeFile = (f) => {
+        if (!f) return
+        const r = new FileReader()
+        r.onload = () => {
+          b.querySelector('#wp8').value = r.result
+          const m = f.name.match(/AuthKey_([A-Z0-9]{10})/i)
+          if (m && !b.querySelector('#wkeyid').value) b.querySelector('#wkeyid').value = m[1].toUpperCase()
+          b.querySelector('#wdroplabel').innerHTML = `<b>✓ ${esc(f.name)}</b><span>key loaded${m ? ' — Key ID ' + esc(m[1].toUpperCase()) : ''}</span>`
+          drop.classList.add('ok')
+        }
+        r.readAsText(f)
+      }
+      drop.onclick = () => file.click()
+      file.onchange = () => takeFile(file.files[0])
+      drop.ondragover = (e) => { e.preventDefault(); drop.classList.add('hover') }
+      drop.ondragleave = () => drop.classList.remove('hover')
+      drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove('hover'); takeFile(e.dataTransfer.files[0]) }
     }
     next.textContent = 'Continue'
   }

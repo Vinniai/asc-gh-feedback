@@ -65,7 +65,11 @@
       <div class="field"><label for="issuer">ASC Issuer ID</label><input id="issuer" autocomplete="off" placeholder="xxxxxxxx-xxxx-…"></div>
     </div>
     <div class="field">
-      <label for="p8">ASC private key <span class="desc">— .p8 contents or its base64</span></label>
+      <label for="p8">ASC private key <span class="desc">— drop the AuthKey file or paste its contents</span></label>
+      <div class="dropzone" id="p8drop" style="margin:6px 0 10px;border:1.5px dashed var(--border);border-radius:var(--radius);padding:18px 14px;text-align:center;cursor:pointer">
+        <input type="file" id="p8file" accept=".p8,.pem,.txt" hidden>
+        <div id="p8droplabel" style="font-size:13px"><b>Drop AuthKey_….p8 here</b> <span style="color:var(--muted-foreground)">or click to browse</span></div>
+      </div>
       <textarea id="p8" autocomplete="off" placeholder="-----BEGIN PRIVATE KEY-----&#10;…"></textarea>
       <p class="panel-hint" style="margin-top:8px">App Store Connect → Users and Access → Integrations → Team Keys (role: App Manager). <a href="https://appstoreconnect.apple.com/access/integrations/api" target="_blank" rel="noopener">Open ASC ↗</a></p>
     </div>
@@ -259,6 +263,24 @@ function wtRefresh() {
 }
 ;['code','ghtoken','repo','keyid','issuer','p8'].forEach(id => $(id).addEventListener('input', wtRefresh))
 document.addEventListener('click', () => setTimeout(wtRefresh, 50))
+const p8drop = $('p8drop'), p8file = $('p8file')
+const p8take = (f) => {
+  if (!f) return
+  const r = new FileReader()
+  r.onload = () => {
+    $('p8').value = r.result
+    const m = f.name.match(/AuthKey_([A-Z0-9]{10})/i)
+    if (m && !$('keyid').value) $('keyid').value = m[1].toUpperCase()
+    $('p8droplabel').innerHTML = '<b>✓ ' + f.name + '</b>'
+    wtRefresh()
+  }
+  r.readAsText(f)
+}
+p8drop.onclick = () => p8file.click()
+p8file.onchange = () => p8take(p8file.files[0])
+p8drop.ondragover = (e) => { e.preventDefault(); p8drop.style.borderColor = 'var(--primary)' }
+p8drop.ondrop = (e) => { e.preventDefault(); p8take(e.dataTransfer.files[0]) }
+
 wtRefresh()
 
 async function prefill() {
