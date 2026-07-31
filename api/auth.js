@@ -61,7 +61,7 @@ export async function GET(request) {
       a.searchParams.set('client_id', env.WORKOS_CLIENT_ID)
       a.searchParams.set('redirect_uri', `${origin}/api/auth/callback`)
       a.searchParams.set('response_type', 'code')
-      a.searchParams.set('provider', 'GithubOAuth')
+      a.searchParams.set('provider', 'GitHubOAuth')
       a.searchParams.set('state', state)
       return redirect(a.toString(), { 'Set-Cookie': stateCookie(state, nextPath) })
     }
