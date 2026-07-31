@@ -61,18 +61,9 @@ export async function GET(request) {
   }
 
   if (action === 'github') {
+    if (!env.GH_OAUTH_CLIENT_ID) return json(500, { error: 'GitHub OAuth not configured' })
     const nextPath = cleanNext(url)
     const state = newState()
-    if (workosEnabled(env)) {
-      const a = new URL('https://api.workos.com/user_management/authorize')
-      a.searchParams.set('client_id', env.WORKOS_CLIENT_ID)
-      a.searchParams.set('redirect_uri', `${origin}/api/auth/callback`)
-      a.searchParams.set('response_type', 'code')
-      a.searchParams.set('provider', 'GitHubOAuth')
-      a.searchParams.set('state', state)
-      return redirect(a.toString(), { 'Set-Cookie': stateCookie(state, nextPath) })
-    }
-    if (!env.GH_OAUTH_CLIENT_ID) return json(500, { error: 'GitHub OAuth not configured' })
     return redirect(githubAuthorize(env, origin, state), { 'Set-Cookie': stateCookie(state, nextPath) })
   }
 

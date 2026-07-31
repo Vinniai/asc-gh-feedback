@@ -460,6 +460,7 @@ function wizRender() {
   const b = W('wizbody'), next = W('wiznext')
   W('wizmsg').textContent = ''
   next.disabled = false
+  next.hidden = false
   if (wiz.step === 1) {
     const pf = wiz.prefill
     b.innerHTML = `<h3>Where should issues go?</h3>
