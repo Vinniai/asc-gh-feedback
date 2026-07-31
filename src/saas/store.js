@@ -89,3 +89,19 @@ export async function appendLog(env, id, entries) {
     ...(file ? { sha: file.sha } : {})
   })
 }
+
+export async function getUser(env, login) {
+  const file = await gh(env, 'GET', `/repos/${env.TENANT_STORE_REPO}/contents/users/${encodeURIComponent(login)}.json`)
+  if (!file) return null
+  return decryptTenant(env, atob(file.content.replace(/\n/g, '')))
+}
+
+export async function putUser(env, login, user) {
+  const path = `/repos/${env.TENANT_STORE_REPO}/contents/users/${encodeURIComponent(login)}.json`
+  const existing = await gh(env, 'GET', path)
+  await gh(env, 'PUT', path, {
+    message: `user ${login}`,
+    content: btoa(await encryptTenant(env, user)),
+    ...(existing ? { sha: existing.sha } : {})
+  })
+}

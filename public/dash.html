@@ -145,7 +145,11 @@
   <div id="signin" class="signin" hidden>
     <h1>Manage your apps</h1>
     <p>Sign in to configure feedback pipelines, destinations, and triage for every app you've connected.</p>
-    <a class="btn btn-primary btn-lg" id="signinbtn" href="/api/auth?action=login">Sign in with GitHub</a>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <a class="btn btn-primary btn-lg" id="signinbtn" href="/api/auth?action=login">Sign in with GitHub</a>
+      <button class="btn btn-outline btn-lg" id="passkeybtn">🔑 Sign in with a passkey</button>
+    </div>
+    <p class="panel-hint" id="passkeymsg" style="margin-top:14px;color:var(--muted-foreground);font-size:13px"></p>
   </div>
 
   <div id="dash" hidden>
@@ -555,10 +559,49 @@ W('wiznext').onclick = wizNext
 W('wizback').onclick = () => { wiz.step = Math.max(0, wiz.step - 1); wizRender() }
 W('wizclose').onclick = () => W('wiz').close()
 
+const b64uToBuf = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0))
+const bufToB64u = (b) => btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+
+function credToJSON(cred) {
+  const r = cred.response
+  const out = { id: cred.id, rawId: bufToB64u(cred.rawId), type: cred.type, clientExtensionResults: cred.getClientExtensionResults(), authenticatorAttachment: cred.authenticatorAttachment }
+  out.response = { clientDataJSON: bufToB64u(r.clientDataJSON) }
+  if (r.attestationObject) out.response.attestationObject = bufToB64u(r.attestationObject)
+  if (r.authenticatorData) out.response.authenticatorData = bufToB64u(r.authenticatorData)
+  if (r.signature) out.response.signature = bufToB64u(r.signature)
+  if (r.userHandle) out.response.userHandle = bufToB64u(r.userHandle)
+  if (r.getTransports) out.response.transports = r.getTransports()
+  return out
+}
+
+async function registerPasskey(link) {
+  try {
+    const { options } = await api('POST', '/api/passkey', { action: 'reg-options' })
+    options.challenge = b64uToBuf(options.challenge)
+    options.user.id = b64uToBuf(options.user.id)
+    options.excludeCredentials = (options.excludeCredentials || []).map(c => ({ ...c, id: b64uToBuf(c.id) }))
+    const cred = await navigator.credentials.create({ publicKey: options })
+    await api('POST', '/api/passkey', { action: 'reg-verify', credential: credToJSON(cred) })
+    if (link) { link.textContent = '✓ Passkey added'; setTimeout(() => { link.textContent = 'Add passkey' }, 2500) }
+  } catch (e) { if (e.name !== 'NotAllowedError') alert(e.message) }
+}
+
+async function passkeyLogin() {
+  const msg = document.getElementById('passkeymsg')
+  try {
+    const { options } = await api('POST', '/api/passkey', { action: 'login-options' })
+    options.challenge = b64uToBuf(options.challenge)
+    const cred = await navigator.credentials.get({ publicKey: options, mediation: 'optional' })
+    await api('POST', '/api/passkey', { action: 'login-verify', credential: credToJSON(cred) })
+    location.reload()
+  } catch (e) { if (e.name !== 'NotAllowedError' && msg) msg.textContent = e.message }
+}
+
 async function load() {
   try {
     const me = await api('GET', '/api/auth?action=me')
-    $('top').innerHTML = `<img src="${esc(me.user.avatar)}" alt=""><span class="who">${esc(me.user.login)}</span><a class="out" href="/api/auth?action=logout">Sign out</a>`
+    $('top').innerHTML = `<img src="${esc(me.user.avatar)}" alt=""><span class="who">${esc(me.user.login)}</span><a class="out" href="#" id="addpk">Add passkey</a><a class="out" href="/api/auth?action=logout">Sign out</a>`
+    document.getElementById('addpk').onclick = (e) => { e.preventDefault(); registerPasskey(e.target) }
     $('dash').hidden = false
     document.getElementById('addapp').onclick = openWiz
     setTimeout(() => { const b2 = document.getElementById('addapp2'); if (b2) b2.onclick = openWiz }, 0)
@@ -575,6 +618,7 @@ async function load() {
     }
   } catch {
     $('signin').hidden = false
+    document.getElementById('passkeybtn').onclick = passkeyLogin
     if (new URLSearchParams(location.search).get('connect')) {
       $('signinbtn').href = '/api/auth?action=login&next=' + encodeURIComponent('/dash.html?connect=1')
       document.querySelector('#signin p').textContent = 'One sign-in and your repositories are ready — then it\u2019s just your App Store Connect key and picking the app.'

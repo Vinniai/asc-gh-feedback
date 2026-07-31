@@ -47,7 +47,8 @@ async function processEvent(cfg, event) {
   for (const [i, url] of fb.screenshotUrls.entries()) {
     try {
       const bytes = await downloadImage(url)
-      screenshotLinks.push(await uploadScreenshot(cfg, fb.id, i, bytes))
+      const stored = await uploadScreenshot(cfg, fb.id, i, bytes)
+      screenshotLinks.push(cfg.shotUrl ? await cfg.shotUrl(fb.id, i + 1) : stored)
     } catch (e) {
       console.error(`screenshot ${i + 1} failed: ${e.message}`)
     }
@@ -71,7 +72,7 @@ async function processEvent(cfg, event) {
   }
 
   try {
-    await sendDestinations(cfg, fb, issueUrl)
+    await sendDestinations(cfg, fb, issueUrl, screenshotLinks)
   } catch (e) {
     console.error(`destinations failed: ${e.message}`)
   }

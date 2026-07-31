@@ -1,5 +1,6 @@
 import { webhookResponse } from '../src/core/handler.js'
 import { getTenant, appendLog } from '../src/saas/store.js'
+import { shotSig } from './shot.js'
 
 const json = (status, obj) =>
   new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } })
@@ -51,6 +52,8 @@ export async function POST(request) {
   if (error) return error
   const events = []
   const cfg = tenantCfg(tenant)
+  const origin = url.origin
+  cfg.shotUrl = async (sub, n) => `${origin}/t/${id}/shot/${sub}/${n}?s=${await shotSig(process.env.TENANT_ENC_KEY, id, sub, n)}`
   cfg.audit = (type, data = {}) => events.push({ t: new Date().toISOString(), type, ...data })
   const res = await webhookResponse(request, cfg)
   if (events.length) await appendLog(process.env, id, events).catch(e => console.error(`log append: ${e.message}`))

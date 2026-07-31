@@ -1,4 +1,5 @@
 import { makeSession, readSession, sessionCookie, clearCookie } from '../src/saas/session.js'
+import { getUser, putUser } from '../src/saas/store.js'
 
 const json = (status, obj, headers = {}) =>
   new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json', ...headers } })
@@ -43,6 +44,11 @@ export async function GET(request) {
     })
     const u = await userRes.json()
     if (!u.login) return json(401, { error: 'could not read GitHub user' })
+
+    try {
+      const rec = (await getUser(env, u.login)) || {}
+      await putUser(env, u.login, { ...rec, ghToken: tok.access_token, avatar: u.avatar_url, name: u.name || u.login })
+    } catch (e) { console.error(`user record: ${e.message}`) }
 
     const sess = await makeSession(env, { login: u.login, avatar: u.avatar_url, name: u.name || u.login, ghToken: tok.access_token })
     return redirect(nextPath, { 'Set-Cookie': sessionCookie(sess) })
