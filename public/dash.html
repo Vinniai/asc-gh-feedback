@@ -141,6 +141,12 @@
   .dropzone.ok { border-color: color-mix(in srgb, var(--success) 60%, transparent); border-style: solid; }
   .dz-inner b { display: block; font-size: 13.5px; }
   .dz-inner span { font-size: 12px; color: var(--muted-foreground); }
+  .repo-list { margin-top: 10px; max-height: 220px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+  .repo-item { display: flex; align-items: center; gap: 9px; padding: 10px 13px; font: 13px var(--font-mono); cursor: pointer; border-bottom: 1px solid var(--border); }
+  .repo-item:last-child { border-bottom: 0; }
+  .repo-item:hover { background: var(--muted); }
+  .repo-item.sel { background: color-mix(in srgb, var(--primary) 10%, transparent); }
+  .repo-item .wiz-tick { margin-left: auto; color: var(--primary); }
 </style>
 </head>
 <body>
