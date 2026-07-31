@@ -145,7 +145,7 @@
   <div id="signin" class="signin" hidden>
     <h1>Manage your apps</h1>
     <p>Sign in to configure feedback pipelines, destinations, and triage for every app you've connected.</p>
-    <a class="btn btn-primary btn-lg" href="/api/auth?action=login">Sign in with GitHub</a>
+    <a class="btn btn-primary btn-lg" id="signinbtn" href="/api/auth?action=login">Sign in with GitHub</a>
   </div>
 
   <div id="dash" hidden>
@@ -565,12 +565,20 @@ async function load() {
     const { tenants } = await api('GET', '/api/tenants')
     if (!tenants.length) { $('empty').hidden = false }
     tenants.forEach(t => $('apps').appendChild(card(t)))
+    if (new URLSearchParams(location.search).get('connect')) {
+      history.replaceState(null, '', '/dash.html')
+      openWiz()
+    }
     $('claimbtn').onclick = async () => {
       try { await api('POST', '/api/tenants', { action: 'claim', tenantId: $('claimid').value.trim() }); location.reload() }
       catch (e) { alert(e.message) }
     }
   } catch {
     $('signin').hidden = false
+    if (new URLSearchParams(location.search).get('connect')) {
+      $('signinbtn').href = '/api/auth?action=login&next=' + encodeURIComponent('/dash.html?connect=1')
+      document.querySelector('#signin p').textContent = 'One sign-in and your repositories are ready — then it\u2019s just your App Store Connect key and picking the app.'
+    }
   }
 }
 load()

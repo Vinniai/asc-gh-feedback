@@ -12,20 +12,23 @@ export async function GET(request) {
 
   if (action === 'login') {
     if (!env.GH_OAUTH_CLIENT_ID) return json(500, { error: 'GitHub OAuth not configured (GH_OAUTH_CLIENT_ID missing)' })
+    const nextPath = (url.searchParams.get('next') || '/dash.html').match(/^\/[\w./?=&-]*$/)?.[0] || '/dash.html'
     const state = [...crypto.getRandomValues(new Uint8Array(16))].map(b => b.toString(16).padStart(2, '0')).join('')
     const auth = new URL('https://github.com/login/oauth/authorize')
     auth.searchParams.set('client_id', env.GH_OAUTH_CLIENT_ID)
     auth.searchParams.set('redirect_uri', `${origin}/api/auth?action=callback`)
     auth.searchParams.set('scope', 'read:user repo')
     auth.searchParams.set('state', state)
-    return redirect(auth.toString(), { 'Set-Cookie': `fl_state=${state}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600` })
+    return redirect(auth.toString(), { 'Set-Cookie': `fl_state=${state}.${encodeURIComponent(nextPath)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600` })
   }
 
   if (action === 'callback') {
     const code = url.searchParams.get('code')
     const state = url.searchParams.get('state')
-    const cookieState = (request.headers.get('cookie') || '').match(/(?:^|;\s*)fl_state=([^;]+)/)?.[1]
+    const rawState = (request.headers.get('cookie') || '').match(/(?:^|;\s*)fl_state=([^;]+)/)?.[1] || ''
+    const [cookieState, encodedNext] = rawState.split('.')
     if (!code || !state || state !== cookieState) return json(400, { error: 'invalid oauth state' })
+    const nextPath = decodeURIComponent(encodedNext || '/dash.html')
 
     const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
       method: 'POST',
@@ -42,7 +45,7 @@ export async function GET(request) {
     if (!u.login) return json(401, { error: 'could not read GitHub user' })
 
     const sess = await makeSession(env, { login: u.login, avatar: u.avatar_url, name: u.name || u.login, ghToken: tok.access_token })
-    return redirect('/dash.html', { 'Set-Cookie': sessionCookie(sess) })
+    return redirect(nextPath, { 'Set-Cookie': sessionCookie(sess) })
   }
 
   if (action === 'logout') return redirect('/', { 'Set-Cookie': clearCookie() })
