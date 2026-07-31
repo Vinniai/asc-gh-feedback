@@ -43,7 +43,9 @@ export async function POST(request) {
         if (r.ok) repos = (await r.json()).filter(x => x.permissions?.push).map(x => x.full_name)
       }
       let apps = null, hasCreds = false
-      const ids = await getOwnerTenants(env, session.login)
+      const idents = [session.uid, session.login, session.ghLogin].filter(Boolean)
+      const lists = await Promise.all(idents.map(i => getOwnerTenants(env, i)))
+      const ids = [...new Set(lists.flat())]
       for (const id of ids) {
         const t = await getTenant(env, id)
         if (t && !t.deleted) {
@@ -59,7 +61,9 @@ export async function POST(request) {
       const githubToken = body.githubToken || session?.ghToken
       if (!githubToken) throw new Error('No GitHub token — provide one or sign in')
       if (body.useExisting && session) {
-        const ids = await getOwnerTenants(env, session.login)
+        const idents = [session.uid, session.login, session.ghLogin].filter(Boolean)
+        const lists = await Promise.all(idents.map(i => getOwnerTenants(env, i)))
+        const ids = [...new Set(lists.flat())]
         for (const id of ids) {
           const t = await getTenant(env, id)
           if (t && !t.deleted) return { githubToken, ascKeyId: t.ascKeyId, ascIssuerId: t.ascIssuerId, p8: t.ascPrivateKey }
@@ -94,7 +98,7 @@ export async function POST(request) {
 
       const sessionUser = session
       await putTenant(env, tenantId, {
-        owner: sessionUser?.login || null,
+        owner: sessionUser?.uid || sessionUser?.login || null,
         createdAt: new Date().toISOString(),
         repo,
         githubToken: creds.githubToken,
@@ -112,9 +116,10 @@ export async function POST(request) {
         routineToken: body.routineToken || ''
       })
 
-      if (sessionUser?.login) {
-        const ids = await getOwnerTenants(env, sessionUser.login)
-        if (!ids.includes(tenantId)) await setOwnerTenants(env, sessionUser.login, [...ids, tenantId])
+      const ownerKey = sessionUser?.uid || sessionUser?.login
+      if (ownerKey) {
+        const ids = await getOwnerTenants(env, ownerKey)
+        if (!ids.includes(tenantId)) await setOwnerTenants(env, ownerKey, [...ids, tenantId])
       }
 
       await pingWebhook(jwt, webhookId)

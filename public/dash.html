@@ -149,9 +149,10 @@
     <h1>Manage your apps</h1>
     <p>Sign in to configure feedback pipelines, destinations, and triage for every app you've connected.</p>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-      <a class="btn btn-primary btn-lg" id="signinbtn" href="/api/auth?action=login">Sign in with GitHub</a>
+      <a class="btn btn-primary btn-lg" id="signinbtn" href="/api/auth?action=login">Sign in</a>
       <button class="btn btn-outline btn-lg" id="passkeybtn">Sign in with a passkey</button>
     </div>
+    <p class="panel-hint" id="providerhint" style="margin-top:10px;font-size:13px;color:var(--muted-foreground)"></p>
     <p class="panel-hint" id="passkeymsg" style="margin-top:14px;color:var(--muted-foreground);font-size:13px"></p>
   </div>
 
@@ -461,7 +462,7 @@ function wizRender() {
         ? `<div class="wiz-ok">✓ GitHub connected as ${esc(pf.login)}</div>
            <div class="field"><label>Repository</label><input id="wrepo" list="wrepos" placeholder="${pf.repos.length ? 'search your repositories…' : 'owner/repo'}" value="${esc(wiz.data.repo || '')}">
            <datalist id="wrepos">${pf.repos.map(r => `<option value="${esc(r)}">`).join('')}</datalist></div>`
-        : `<div class="field" style="margin-top:16px"><a class="btn btn-primary btn-block" href="/api/auth?action=login">Re-connect GitHub to list your repositories</a></div>
+        : `<div class="field" style="margin-top:16px"><a class="btn btn-primary btn-block" href="/api/auth?action=github&next=%2Fdash.html%3Fconnect%3D1">Connect GitHub to list your repositories</a></div>
            <p class="hint" style="margin-top:12px">Your sign-in predates repository access — one click re-connects it. Or paste a fine-grained PAT below.</p>
            <div class="field"><label>Personal access token <span class="desc">(alternative)</span></label><input id="wtoken" type="password" placeholder="github_pat_…"></div>
            <div class="field"><label>Repository</label><input id="wrepo" placeholder="owner/repo" value="${esc(wiz.data.repo || '')}"></div>`}`
@@ -632,6 +633,15 @@ async function load() {
     }
   } catch {
     $('signin').hidden = false
+    try {
+      const cfg = await api('GET', '/api/auth?action=config')
+      if (cfg.workos) {
+        document.getElementById('passkeybtn').hidden = true
+        document.getElementById('providerhint').textContent = 'Apple, GitHub, passkey, or email — one account for all of them.'
+      } else {
+        document.getElementById('signinbtn').textContent = 'Sign in with GitHub'
+      }
+    } catch {}
     document.getElementById('passkeybtn').onclick = passkeyLogin
     if (new URLSearchParams(location.search).get('connect')) {
       $('signinbtn').href = '/api/auth?action=login&next=' + encodeURIComponent('/dash.html?connect=1')

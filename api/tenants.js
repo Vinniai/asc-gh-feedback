@@ -29,12 +29,22 @@ async function authed(request) {
   return { user }
 }
 
+const identities = (user) => [user.uid, user.login, user.ghLogin].filter(Boolean)
+
+async function ownerIds(user) {
+  const lists = await Promise.all(identities(user).map(i => getOwnerTenants(process.env, i)))
+  return [...new Set(lists.flat())]
+}
+
 async function ownedTenant(user, tenantId) {
   const t = await getTenant(process.env, tenantId)
   if (!t || t.deleted) return { error: json(404, { error: 'unknown tenant' }) }
-  if (t.owner && t.owner !== user.login) return { error: json(403, { error: 'not your app' }) }
+  if (t.owner && !identities(user).includes(t.owner)) {
+    const ids = await ownerIds(user)
+    if (!ids.includes(tenantId)) return { error: json(403, { error: 'not your app' }) }
+  }
   if (!t.owner) {
-    const ids = await getOwnerTenants(process.env, user.login)
+    const ids = await ownerIds(user)
     if (!ids.includes(tenantId)) return { error: json(403, { error: 'not your app' }) }
   }
   return { t }
@@ -61,7 +71,7 @@ export async function GET(request) {
     return json(200, { deliveries: await recentDeliveries(jwt, t.webhookId) })
   }
 
-  const ids = await getOwnerTenants(process.env, user.login)
+  const ids = await ownerIds(user)
   const tenants = []
   for (const id of ids) {
     const t = await getTenant(process.env, id)
@@ -80,10 +90,11 @@ export async function POST(request) {
     const t = await getTenant(process.env, body.tenantId)
     if (!t) return json(404, { error: 'unknown tenant' })
     if (t.owner && t.owner !== user.login) return json(403, { error: 'already owned' })
-    t.owner = user.login
+    const key = user.uid || user.login
+    t.owner = key
     await putTenant(process.env, body.tenantId, t)
-    const ids = await getOwnerTenants(process.env, user.login)
-    if (!ids.includes(body.tenantId)) await setOwnerTenants(process.env, user.login, [...ids, body.tenantId])
+    const ids = await getOwnerTenants(process.env, key)
+    if (!ids.includes(body.tenantId)) await setOwnerTenants(process.env, key, [...ids, body.tenantId])
     return json(200, { ok: true })
   }
 
@@ -132,7 +143,9 @@ export async function DELETE(request) {
 
   t.deleted = true
   await putTenant(process.env, body.tenantId, t)
-  const ids = await getOwnerTenants(process.env, user.login)
-  await setOwnerTenants(process.env, user.login, ids.filter(i => i !== body.tenantId))
+  for (const ident of identities(user)) {
+    const ids = await getOwnerTenants(process.env, ident)
+    if (ids.includes(body.tenantId)) await setOwnerTenants(process.env, ident, ids.filter(i => i !== body.tenantId))
+  }
   return json(200, { ok: true })
 }

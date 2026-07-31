@@ -39,6 +39,10 @@
     {
       "source": "/t/:tenant/shot/:sub/:n",
       "destination": "/api/shot?tenant=:tenant&sub=:sub&n=:n"
+    },
+    {
+      "source": "/api/auth/callback",
+      "destination": "/api/auth?action=workos-callback"
     }
   ]
 }
