@@ -145,6 +145,7 @@
     <div class="top" id="top"><span class="who">Dashboard</span></div>
   </header>
 
+  <div class="alert alert-error" id="autherr" style="margin-top:14px"></div>
   <div id="signin" class="signin" hidden>
     <h1>Manage your apps</h1>
     <p>Sign in to configure feedback pipelines, destinations, and triage for every app you've connected.</p>
@@ -613,6 +614,11 @@ async function passkeyLogin() {
 }
 
 async function load() {
+  const ae = new URLSearchParams(location.search).get('autherr')
+  if (ae) {
+    const el = $('autherr'); el.classList.add('show'); el.textContent = 'Sign-in problem: ' + ae
+    history.replaceState(null, '', '/dash.html')
+  }
   try {
     const me = await api('GET', '/api/auth?action=me')
     $('top').innerHTML = `<img src="${esc(me.user.avatar)}" alt=""><span class="who">${esc(me.user.login)}</span><a class="out" href="#" id="addpk">Add passkey</a><a class="out" href="/api/auth?action=logout">Sign out</a>`

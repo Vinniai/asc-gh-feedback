@@ -14,8 +14,10 @@ const stateCookie = (state, nextPath) =>
 
 const readState = (request) => {
   const raw = (request.headers.get('cookie') || '').match(/(?:^|;\s*)fl_state=([^;]+)/)?.[1] || ''
-  const [state, encodedNext] = raw.split('.')
-  return { state, nextPath: decodeURIComponent(encodedNext || '/dash.html') }
+  const dot = raw.indexOf('.')
+  const state = dot === -1 ? raw : raw.slice(0, dot)
+  const encodedNext = dot === -1 ? '' : raw.slice(dot + 1)
+  return { state, nextPath: decodeURIComponent(encodedNext || '%2Fdash.html') }
 }
 
 const newState = () => [...crypto.getRandomValues(new Uint8Array(16))].map(b => b.toString(16).padStart(2, '0')).join('')
@@ -29,11 +31,16 @@ function githubAuthorize(env, origin, state) {
   return auth.toString()
 }
 
+const CANONICAL = 'https://appshake.tocld.com'
+
 export async function GET(request) {
   const env = process.env
   const url = new URL(request.url)
   const action = url.searchParams.get('action') || 'me'
-  const origin = url.origin
+  let origin = url.origin
+  if (['login', 'github'].includes(action) && url.hostname.endsWith('.vercel.app')) {
+    return redirect(`${CANONICAL}${url.pathname}${url.search}`)
+  }
 
   if (action === 'config') return json(200, { workos: workosEnabled(env), github: Boolean(env.GH_OAUTH_CLIENT_ID) })
 
@@ -70,10 +77,13 @@ export async function GET(request) {
   }
 
   if (action === 'workos-callback') {
+    const provErr = url.searchParams.get('error_description') || url.searchParams.get('error')
+    if (provErr) return redirect(`/dash.html?autherr=${encodeURIComponent(provErr.slice(0, 300))}`)
     const code = url.searchParams.get('code')
     const state = url.searchParams.get('state')
     const { state: cookieState, nextPath } = readState(request)
-    if (!code || !state || state !== cookieState) return json(400, { error: 'invalid oauth state' })
+    if (!code) return redirect('/dash.html?autherr=' + encodeURIComponent('No authorization code returned — try signing in again.'))
+    if (!state || state !== cookieState) return redirect('/dash.html?autherr=' + encodeURIComponent('Sign-in session expired (state mismatch) — please try again.'))
 
     const res = await fetch('https://api.workos.com/user_management/authenticate', {
       method: 'POST',
@@ -88,7 +98,8 @@ export async function GET(request) {
     const data = await res.json()
     if (!res.ok || !data.user) {
       console.error(`workos authenticate: ${res.status} ${JSON.stringify(data).slice(0, 300)}`)
-      return json(401, { error: 'sign-in failed' })
+      const detail = data.error_description || data.error || data.message || `authentication failed (${res.status})`
+      return redirect('/dash.html?autherr=' + encodeURIComponent(String(detail).slice(0, 300)))
     }
     const wu = data.user
     const uid = wu.id
@@ -130,10 +141,12 @@ export async function GET(request) {
   }
 
   if (action === 'callback') {
+    const provErr = url.searchParams.get('error_description') || url.searchParams.get('error')
+    if (provErr) return redirect(`/dash.html?autherr=${encodeURIComponent(provErr.slice(0, 300))}`)
     const code = url.searchParams.get('code')
     const state = url.searchParams.get('state')
     const { state: cookieState, nextPath } = readState(request)
-    if (!code || !state || state !== cookieState) return json(400, { error: 'invalid oauth state' })
+    if (!code || !state || state !== cookieState) return redirect('/dash.html?autherr=' + encodeURIComponent('Sign-in session expired — please try again.'))
 
     const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
       method: 'POST',

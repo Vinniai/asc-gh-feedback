@@ -44,5 +44,6 @@
       "source": "/api/auth/callback",
       "destination": "/api/auth?action=workos-callback"
     }
-  ]
+  ],
+  "cleanUrls": true
 }
