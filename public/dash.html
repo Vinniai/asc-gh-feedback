@@ -589,9 +589,16 @@ async function wizNext() {
       wiz.data.apps = r.apps
       wiz.step = 2
     } else if (wiz.step === 2) {
-      if (!wiz.data.appId) { msg.textContent = 'Pick an app'; return }
-      next.disabled = true; next.textContent = 'Creating webhook…'
-      wiz.data.result = await api('POST', '/api/setup', { action: 'provision', ...wiz.data })
+      if (!wiz.data.appIds?.length) { msg.textContent = 'Pick at least one app'; return }
+      next.disabled = true
+      wiz.data.results = []
+      for (const [i, appId] of wiz.data.appIds.entries()) {
+        const appName = wiz.data.apps.find(a => a.id === appId)?.name || appId
+        next.textContent = `Connecting ${appName} (${i + 1}/${wiz.data.appIds.length})…`
+        try {
+          wiz.data.results.push(await api('POST', '/api/setup', { action: 'provision', ...wiz.data, appId }))
+        } catch (e) { wiz.data.results.push({ error: e.message, appName }) }
+      }
       wiz.step = 3
     } else {
       W('wiz').close(); location.reload(); return
