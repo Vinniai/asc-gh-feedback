@@ -45,7 +45,7 @@ export async function GET(request) {
       a.searchParams.set('client_id', env.WORKOS_CLIENT_ID)
       a.searchParams.set('redirect_uri', `${origin}/api/auth/callback`)
       a.searchParams.set('response_type', 'code')
-      a.searchParams.set('provider', 'authkit')
+      a.searchParams.set('provider', url.searchParams.get('provider') || 'authkit')
       a.searchParams.set('state', state)
       return redirect(a.toString(), { 'Set-Cookie': stateCookie(state, nextPath) })
     }
@@ -54,9 +54,18 @@ export async function GET(request) {
   }
 
   if (action === 'github') {
-    if (!env.GH_OAUTH_CLIENT_ID) return json(500, { error: 'GitHub OAuth not configured' })
     const nextPath = cleanNext(url)
     const state = newState()
+    if (workosEnabled(env)) {
+      const a = new URL('https://api.workos.com/user_management/authorize')
+      a.searchParams.set('client_id', env.WORKOS_CLIENT_ID)
+      a.searchParams.set('redirect_uri', `${origin}/api/auth/callback`)
+      a.searchParams.set('response_type', 'code')
+      a.searchParams.set('provider', 'GithubOAuth')
+      a.searchParams.set('state', state)
+      return redirect(a.toString(), { 'Set-Cookie': stateCookie(state, nextPath) })
+    }
+    if (!env.GH_OAUTH_CLIENT_ID) return json(500, { error: 'GitHub OAuth not configured' })
     return redirect(githubAuthorize(env, origin, state), { 'Set-Cookie': stateCookie(state, nextPath) })
   }
 
@@ -83,6 +92,20 @@ export async function GET(request) {
     }
     const wu = data.user
     const uid = wu.id
+
+    let ghToken = '', ghLogin = ''
+    const toks = [].concat(data.oauth_tokens || [])
+    const gh = toks.find(t => (t?.provider || '').toLowerCase().includes('github')) || (data.oauth_tokens && !Array.isArray(data.oauth_tokens) ? data.oauth_tokens : null)
+    if (gh?.access_token) {
+      ghToken = gh.access_token
+      try {
+        const gu = await (await fetch('https://api.github.com/user', {
+          headers: { Authorization: `Bearer ${ghToken}`, 'User-Agent': 'appshake' }
+        })).json()
+        ghLogin = gu.login || ''
+      } catch {}
+    }
+
     let rec = {}
     try {
       rec = (await getUser(env, uid)) || {}
@@ -90,17 +113,18 @@ export async function GET(request) {
         ...rec,
         email: wu.email,
         name: [wu.first_name, wu.last_name].filter(Boolean).join(' ') || wu.email,
-        avatar: wu.profile_picture_url || rec.avatar || ''
+        avatar: wu.profile_picture_url || rec.avatar || '',
+        ...(ghToken ? { ghToken, ghLogin: ghLogin || rec.ghLogin || '' } : {})
       })
     } catch (e) { console.error(`user record: ${e.message}`) }
 
     const sess = await makeSession(env, {
       uid,
-      login: rec.ghLogin || wu.email,
+      login: ghLogin || rec.ghLogin || wu.email,
       name: [wu.first_name, wu.last_name].filter(Boolean).join(' ') || wu.email,
       avatar: wu.profile_picture_url || rec.avatar || '',
-      ghToken: rec.ghToken || '',
-      ghLogin: rec.ghLogin || ''
+      ghToken: ghToken || rec.ghToken || '',
+      ghLogin: ghLogin || rec.ghLogin || ''
     })
     return redirect(nextPath, { 'Set-Cookie': sessionCookie(sess) })
   }
