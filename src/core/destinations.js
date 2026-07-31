@@ -1,7 +1,7 @@
 export async function sendDestinations(cfg, fb, issueUrl, screenshots = []) {
   const dests = cfg.destinations || []
   if (!dests.length) return
-  const summary = `${fb.kind === 'crash' ? '💥 Crash report' : '📱 Feedback'} on ${fb.appName || fb.bundleId || 'your app'} — ${fb.device || 'unknown device'}, ${fb.osVersion || '?'}, build ${fb.build || '?'}`
+  const summary = `${fb.kind === 'crash' ? 'Crash report' : 'Feedback'} on ${fb.appName || fb.bundleId || 'your app'} — ${fb.device || 'unknown device'}, ${fb.osVersion || '?'}, build ${fb.build || '?'}`
   const comment = fb.comment ? `“${fb.comment.slice(0, 500)}”` : '(no comment)'
 
   await Promise.allSettled(dests.map(async (d) => {

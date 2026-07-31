@@ -133,6 +133,9 @@
     .pill-tag { animation: none; }
     .pause:active, .btn:active { transform: none; }
   }
+  .wiz-app { justify-content: space-between; }
+  .wiz-app .wiz-tick { color: var(--primary); opacity: 0; transform: scale(.8); transition: opacity 150ms var(--ease-out), transform 150ms var(--ease-out); }
+  .wiz-app.sel .wiz-tick { opacity: 1; transform: none; }
 </style>
 </head>
 <body>
@@ -147,7 +150,7 @@
     <p>Sign in to configure feedback pipelines, destinations, and triage for every app you've connected.</p>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
       <a class="btn btn-primary btn-lg" id="signinbtn" href="/api/auth?action=login">Sign in with GitHub</a>
-      <button class="btn btn-outline btn-lg" id="passkeybtn">🔑 Sign in with a passkey</button>
+      <button class="btn btn-outline btn-lg" id="passkeybtn">Sign in with a passkey</button>
     </div>
     <p class="panel-hint" id="passkeymsg" style="margin-top:14px;color:var(--muted-foreground);font-size:13px"></p>
   </div>
@@ -481,23 +484,32 @@ function wizRender() {
     next.textContent = 'Continue'
   }
   if (wiz.step === 2) {
-    b.innerHTML = `<h3>Pick the app to watch</h3>
-      <p class="hint">We create the Apple webhook for it automatically.</p>
+    wiz.data.appIds = wiz.data.appIds || []
+    b.innerHTML = `<h3>Pick the apps to watch</h3>
+      <p class="hint">Select one or more — we create an Apple webhook for each, all going to the same repository.</p>
       <div class="wiz-apps">${wiz.data.apps.map(a =>
-        `<div class="wiz-app ${wiz.data.appId === a.id ? 'sel' : ''}" data-id="${a.id}" role="radio" tabindex="0"><div><div>${esc(a.name)}</div><div class="b">${esc(a.bundleId)}</div></div></div>`).join('')}</div>`
+        `<div class="wiz-app ${wiz.data.appIds.includes(a.id) ? 'sel' : ''}" data-id="${a.id}" role="checkbox" aria-checked="${wiz.data.appIds.includes(a.id)}" tabindex="0"><div style="flex:1"><div>${esc(a.name)}</div><div class="b">${esc(a.bundleId)}</div></div><span class="wiz-tick">✓</span></div>`).join('')}</div>`
+    const refresh = () => {
+      const n = wiz.data.appIds.length
+      next.textContent = n > 1 ? `Connect ${n} apps` : 'Create webhook & go live'
+      next.disabled = n === 0
+    }
     b.querySelectorAll('.wiz-app').forEach(el => el.onclick = () => {
-      b.querySelectorAll('.wiz-app').forEach(x => x.classList.remove('sel'))
-      el.classList.add('sel'); wiz.data.appId = el.dataset.id
-      W('wiznext').disabled = false
+      const id = el.dataset.id
+      const i = wiz.data.appIds.indexOf(id)
+      if (i >= 0) wiz.data.appIds.splice(i, 1); else wiz.data.appIds.push(id)
+      el.classList.toggle('sel', i < 0)
+      el.setAttribute('aria-checked', String(i < 0))
+      refresh()
     })
-    next.textContent = 'Create webhook & go live'
-    next.disabled = !wiz.data.appId
+    refresh()
   }
   if (wiz.step === 3) {
-    b.innerHTML = `<h3>You're live 🎉</h3>
-      <div class="wiz-ok">✓ Webhook created on ${esc(wiz.data.result.app.name)}</div>
-      <p class="hint" style="margin-top:12px">Endpoint: <span class="code">${esc(wiz.data.result.webhookUrl)}</span></p>
-      <p class="hint">Watching Apple's delivery log for the test ping…</p>
+    b.innerHTML = `<h3>You're live</h3>
+      ${wiz.data.results.map(r => r.error
+        ? `<div class="wiz-ok" style="background:color-mix(in srgb, var(--destructive) 10%, transparent);color:var(--destructive)">${esc(r.appName)}: ${esc(r.error)}</div>`
+        : `<div class="wiz-ok">✓ ${esc(r.app.name)} connected</div>`).join('')}
+      <p class="hint" style="margin-top:12px">Watching Apple's delivery log for the test pings…</p>
       <div class="deliv-out" id="wdeliv">waiting…</div>`
     next.textContent = 'Done'
     wizPollDeliveries()
@@ -506,8 +518,10 @@ function wizRender() {
 
 async function wizPollDeliveries(tries = 0) {
   if (wiz.step !== 3 || tries > 10) return
+  const first = (wiz.data.results || []).find(r => r.tenantId)
+  if (!first) { W('wdeliv').textContent = 'No webhooks created.'; return }
   try {
-    const r = await api('GET', `/api/tenants?deliveries=${wiz.data.result.tenantId}`)
+    const r = await api('GET', `/api/tenants?deliveries=${first.tenantId}`)
     if (r.deliveries.length) {
       W('wdeliv').textContent = r.deliveries.map(d => `${d.createdDate}  ${d.deliveryState}  HTTP ${d.response?.httpStatusCode ?? '—'}`).join('\n')
       if (r.deliveries.some(d => d.deliveryState === 'SUCCEEDED')) return
